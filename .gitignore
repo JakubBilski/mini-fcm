@@ -1,3 +1,8 @@
+data/*
+!data/.gitkeep
+plots/*
+!plots/.gitkeep
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

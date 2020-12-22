@@ -3,16 +3,17 @@ from datetime import datetime
 import os
 
 import pathlib
+from examiningConvergence.examineConvergence import examineConvergence
 
 
 from loadingData import loadArff
 from cognitiveMaps import cognitiveMap
 
 
-# train_path = pathlib.Path('./data/Cricket/Cricket_TRAIN.arff')
-# test_path = pathlib.Path('./data/Cricket/Cricket_TEST.arff')
-train_path = pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TRAIN.arff')
-test_path = pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TEST.arff')
+train_path = pathlib.Path('./data/Cricket/Cricket_TRAIN.arff')
+test_path = pathlib.Path('./data/Cricket/Cricket_TEST.arff')
+# train_path = pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TRAIN.arff')
+# test_path = pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TEST.arff')
 
 plots_dir = pathlib.Path(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}\\')
 
@@ -36,17 +37,19 @@ def find_matching_model(models, m):
 
 if __name__ == "__main__":
     os.mkdir(plots_dir)
-    input_size = 3
+    input_size = 6
     models = []
-    xses_series, ys = loadArff.load_uwave_normalized(train_path)
+    xses_series, ys = loadArff.load_cricket_normalized(train_path)
     for i in tqdm(range(0,len(ys))):
         fcm = cognitiveMap.FuzzyCognitiveMap(input_size)
         fcm.train(xses_series[i])
         fcm.set_class(ys[i])
         models.append(fcm)
         fcm.display_plot(plots_dir / f"trained{i}.png")
+        # fcm.display_plot()
+        # examineConvergence(fcm)
     
-    xses_series, ys = loadArff.load_uwave_normalized(test_path)
+    xses_series, ys = loadArff.load_cricket_normalized(test_path)
     mismatches = 0
     for i in tqdm(range(len(ys))):
         fcm = cognitiveMap.FuzzyCognitiveMap(input_size)
@@ -54,10 +57,11 @@ if __name__ == "__main__":
         class_prediction = find_matching_model(models, fcm).get_class()
         if class_prediction != ys[i]:
             mismatches += 1
-            fcm.display_plot(plots_dir / f"predicted{i}_mistake{class_prediction}_{ys[i]}.png")
+            # fcm.display_plot(plots_dir / f"predicted{i}_mistake{class_prediction}_{ys[i]}.png")
         else:
-            fcm.display_plot(plots_dir / f"predicted{i}.png")
+            pass
+            # fcm.display_plot(plots_dir / f"predicted{i}.png")
     
     print(f"Accuracy: {len(ys)-mismatches}/{len(ys)} ({100*(len(ys)-mismatches)/len(ys)}%)")
     # 86% Cricket
-    # UWave
+    # 31% UWave

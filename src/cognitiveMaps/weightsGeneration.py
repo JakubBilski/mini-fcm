@@ -21,7 +21,7 @@ def get_random_weights(n):
     weights = []    
     for i in range(n):
         to_add = [random.uniform(0, 1) for _ in range(n)]
-        to_add[i] = 0.0
+        to_add[i] = 1.0
         weights.append(to_add)
     return weights
 

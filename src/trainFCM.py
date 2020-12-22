@@ -45,7 +45,7 @@ if __name__ == "__main__":
         fcm.train(xses_series[i])
         fcm.set_class(ys[i])
         models.append(fcm)
-        fcm.display_plot(plots_dir / f"trained{i}.png")
+        # fcm.display_plot(plots_dir / f"trained{i}.png")
         # fcm.display_plot()
         # examineConvergence(fcm)
     

@@ -10,10 +10,10 @@ from loadingData import loadArff
 from cognitiveMaps import cognitiveMap
 
 
-train_path = pathlib.Path('./data/Cricket/Cricket_TRAIN.arff')
-test_path = pathlib.Path('./data/Cricket/Cricket_TEST.arff')
-# train_path = pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TRAIN.arff')
-# test_path = pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TEST.arff')
+# train_path = pathlib.Path('./data/Cricket/Cricket_TRAIN.arff')
+# test_path = pathlib.Path('./data/Cricket/Cricket_TEST.arff')
+train_path = pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TRAIN.arff')
+test_path = pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TEST.arff')
 
 plots_dir = pathlib.Path(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}\\')
 
@@ -96,17 +96,17 @@ def test_fcm_nn():
 def append_ecm_to_models(data):
     xs, y, models, input_size, extend_size = data
     fcm = cognitiveMap.ExtendedCognitiveMap(input_size, input_size+extend_size)
-    fcm.train(xs, steps=200)
+    fcm.train(xs, steps=100)
     fcm.set_class(y)
     models.append(fcm)
 
 
 def test_ecm_nn():
     os.mkdir(plots_dir)
-    input_size = 6
+    input_size = 3
     extend_size = 3
     models = []
-    xses_series, ys = loadArff.load_cricket_normalized(train_path)
+    xses_series, ys = loadArff.load_uwave_normalized(train_path)
     # input_sizes = [input_size for i in range(len(ys))]
     # extend_sizes = [extend_size for i in range(len(ys))]
     # modelss = [models for i in range(len(ys))]
@@ -121,7 +121,7 @@ def test_ecm_nn():
         model.display_plot(save_path=plots_dir / f"trained{i}.png")
         i+=1
 
-    xses_series, ys = loadArff.load_cricket_normalized(test_path)
+    xses_series, ys = loadArff.load_uwave_normalized(test_path)
 
     test_models = []
     # modelss = [test_models for i in range(len(ys))]

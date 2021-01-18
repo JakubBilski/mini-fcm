@@ -28,3 +28,9 @@ def D(n, k):
     for i in range(k):
         res[i][i] = 1
     return res
+
+def E(n, k):
+    res = np.zeros(shape=(k,n))
+    for i in range(k, n):
+        res[i-k][i] = 1
+    return res

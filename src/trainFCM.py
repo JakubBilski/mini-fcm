@@ -151,18 +151,6 @@ def test_ecm_nn():
             mismatches += 1
     print(f"Accuracy (weights and start values nn): {len(ys)-mismatches}/{len(ys)} ({100*(len(ys)-mismatches)/len(ys)}%)")
 
-
-    mismatches = 0
-    i = 0
-    for model in test_models:
-        class_prediction = nn_convergence(models, model, xses_series[i][0]).get_class()
-        if class_prediction != model.get_class():
-            print(f"Error: {class_prediction} should be {model.get_class()}")
-            mismatches += 1
-        i+=1
-    print(f"Accuracy (convergence nn): {len(ys)-mismatches}/{len(ys)} ({100*(len(ys)-mismatches)/len(ys)}%)")
-
-
 if __name__ == "__main__":
     test_ecm_nn()
     # what if we compared points of covergence for these trained ecms?

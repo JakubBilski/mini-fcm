@@ -1,10 +1,6 @@
 import numpy as np
 import itertools
 
-from cognitiveMaps import weightsGeneration
-from cognitiveMaps import cognitiveMap
-from cognitiveMaps import displaying
-
 MAX_INFERE_ITERATIONS = 1000
 
 def examineConvergence(fcm):

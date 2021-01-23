@@ -2,6 +2,8 @@ from sklearn.cluster import KMeans
 from tqdm import tqdm
 from datetime import datetime
 import numpy as np
+import json
+import copy
 import os
 # from multiprocessing.dummy import Pool as ThreadPool
 
@@ -9,8 +11,10 @@ import pathlib
 from examiningConvergence.examineConvergence import examineConvergence
 
 from loadingData import loadArff
-from cognitiveMaps import cognitiveMap
 from cognitiveMaps import consts
+from cognitiveMaps import comparing
+from cognitiveMaps.ecmTrainingPath import ECMTrainingPath
+from cognitiveMaps.extendedCognitiveMap import ExtendedCognitiveMap
 
 
 train_path = pathlib.Path('./data/Cricket/Cricket_TRAIN.arff')
@@ -19,63 +23,7 @@ test_path = pathlib.Path('./data/Cricket/Cricket_TEST.arff')
 # test_path = pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TEST.arff')
 
 plots_dir = pathlib.Path(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}\\')
-
-
-def weights_distance(weights_a, weights_b):
-    result = 0
-    for i in range(len(weights_a)):
-        for j in range(len(weights_a[0])):
-            result += abs(weights_a[i][j]-weights_b[i][j])
-    return result
-
-
-def nn_weights(models, m):
-    best_cost = 1000
-    best_model = None
-    for model in models:
-        cost = weights_distance(model.weights, m.weights)
-        if cost < best_cost:
-            best_model = model
-            best_cost = cost
-    return best_model
-
-
-def nn_weights_and_start_values(models, m, input_size, extend_size):
-    best_cost = 1000
-    best_model = None
-    for model in models:
-        cost = weights_distance(model.weights, m.weights)
-        cost += sum(consts.E(input_size+extend_size, input_size).dot(model.start_values-m.start_values))
-        if cost < best_cost:
-            best_model = model
-            best_cost = cost
-    return best_model
-
-
-def nn_convergence(models, m, first_input):
-    best_cost = 100000
-    best_model = None
-    pnt = m.get_convergence_point(first_input)
-    for model in models:
-        m_pnt = model.get_convergence_point(first_input)
-        cost = sum(pnt-m_pnt)
-        if cost < best_cost:
-            best_model = model
-            best_cost = cost
-    return best_model
-
-
-def best_prediction(models, xs):
-    best_cost = 100000
-    best_model = None
-    for model in models:
-        predicted_xs = model.predict(xs, len(xs))
-        # print(f"Model {model.get_class()} predicted {predicted_xs[len(xs)-1]} (should be {xs[len(xs)-1]})")
-        cost = ((predicted_xs - xs)**2).mean()
-        if cost < best_cost:
-            best_model = model
-            best_cost = cost
-    return best_model
+checkpoints_dir = pathlib.Path(f'./checkpoints/Cricket/')
 
 
 def test_fcm_nn():
@@ -95,9 +43,9 @@ def test_fcm_nn():
     xses_series, ys = loadArff.load_cricket_normalized(test_path)
     mismatches = 0
     for i in tqdm(range(len(ys))):
-        fcm = cognitiveMap.FuzzyCognitiveMap(input_size)
+        fcm = FuzzyCognitiveMap(input_size)
         fcm.train(xses_series[i])
-        class_prediction = nn_weights(models, fcm).get_class()
+        class_prediction = comparing.nn_weights(models, fcm).get_class()
         if class_prediction != ys[i]:
             mismatches += 1
             # fcm.display_plot(plots_dir / f"predicted{i}_mistake{class_prediction}_{ys[i]}.png")
@@ -153,7 +101,7 @@ def test_ecm_nn():
 
     mismatches = 0
     for model in test_models:
-        class_prediction = nn_weights(models, model).get_class()
+        class_prediction = comparing.nn_weights(models, model).get_class()
         if class_prediction != model.get_class():
             print(f"Error: {class_prediction} should be {model.get_class()}")
             mismatches += 1
@@ -161,7 +109,7 @@ def test_ecm_nn():
 
     mismatches = 0
     for model in test_models:
-        class_prediction = nn_weights_and_start_values(models, model, input_size, extend_size).get_class()
+        class_prediction = comparing.nn_weights_and_start_values(models, model, input_size, extend_size).get_class()
         if class_prediction != model.get_class():
             print(f"Error: {class_prediction} should be {model.get_class()}")
             mismatches += 1
@@ -210,7 +158,7 @@ def small_steps_ecn_nn():
     # pool = ThreadPool(2)
     # pool.map(append_ecm_to_models, zip(xses_series, ys, modelss, input_sizes, extend_sizes))
     for i in range(len(ys)):
-        model = cognitiveMap.ExtendedCognitiveMap(input_size, input_size+extend_size)
+        model = ExtendedCognitiveMap(input_size, input_size+extend_size)
         model.set_class(ys[i])
         models.append(model)
     
@@ -235,15 +183,51 @@ def small_steps_ecn_nn():
     mismatches = 0
     print("Identifying test cases")
     for xs, y in tqdm(zip(xses_series, ys)):
-        class_prediction = best_prediction(models, xs).get_class()
+        class_prediction = comparing.best_prediction(models, xs).get_class()
         if class_prediction != y:
             print(f"Error: {class_prediction} should be {y}")
             mismatches += 1
     print(f"Accuracy (best prediction): {len(ys)-mismatches}/{len(ys)} ({100*(len(ys)-mismatches)/len(ys)}%)")
 
-    
+def create_checkpoints():
+    learning_rate = 0.002
+    steps = 1
+    input_size = 6
+    extended_size = 3
+
+    if not checkpoints_dir.is_dir():
+        os.mkdir(checkpoints_dir)
+    checkpoints_path = checkpoints_dir / 'train/'
+    os.mkdir(checkpoints_path)
+
+    training_paths = []
+    xses_series, ys = loadArff.load_cricket_normalized(train_path)
+    for i in tqdm(range(0,len(ys))):
+        training_path = ECMTrainingPath(learning_rate, ys[i])
+        ecm = ExtendedCognitiveMap(input_size, input_size+extended_size)
+        ecm.set_class(ys[i])
+        training_path.points.append(copy.deepcopy(ecm))
+        for step in range(steps):
+            ecm.train_step(xses_series[i], learning_rate)
+            training_path.points.append(copy.deepcopy(ecm))
+        training_paths.append(training_path)
+
+    unique_file_suffix = 0
+    for tp in training_paths:
+        file = open(checkpoints_path / f'training_path{unique_file_suffix}.json', 'w')
+        file.write(tp.to_json())
+        file.close()
+        unique_file_suffix += 1
+
+def load_checkpoints():
+    checkpoints_path_train = checkpoints_dir / 'train/'
+    training_paths = []
+    for file_path in checkpoints_path_train.iterdir():
+        file = open(file_path, 'r')
+        training_paths.append(ECMTrainingPath.from_json(file.read()))
+    print(training_paths[0].points[0].weights)
 
 if __name__ == "__main__":
     # test_ecm_nn()
-    small_steps_ecn_nn()
-    # what if we compared points of covergence for these trained ecms?
+    create_checkpoints()
+    load_checkpoints()

@@ -34,4 +34,15 @@ class ECMTrainingPath:
             training_path.points.append(ecm)
         return training_path
 
+    def from_json_chosen_step(source, step):
+        d = json.loads(source)
+        class_name = d['class_name']
+        n = d['n']
+        k = d['k']
+        ecm = ExtendedCognitiveMap(k, n)
+        ecm.weights = np.asarray(d['weights'][step]) 
+        ecm.start_values = np.asarray(d['start_values'][step])
+        ecm.set_class(class_name)
+        return ecm
+
         

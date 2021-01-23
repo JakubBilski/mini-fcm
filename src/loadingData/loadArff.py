@@ -39,3 +39,14 @@ def load_uwave_normalized(path):
     max_x = 5
     normalized = [[[(x-min_x)/(max_x-min_x) for x in vector] for vector in series] for series in xses_series]
     return normalized, ys
+
+def load_basic_motions(path):
+    data, _ = arff.loadarff(path)
+    df = pd.DataFrame(data)
+    xses_series = [[[
+        float(series[variable][vector]) for variable in range(6)]
+        for vector in range(len(series[0]))]
+        for series in df['relationalAtt']]
+    classes = {b"Standing" : 0, b"Running": 1, b"Walking": 2, b"Badminton": 3}
+    ys = [float(classes[a]) for a in df['activity']]
+    return xses_series, ys

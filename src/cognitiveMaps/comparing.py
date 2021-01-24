@@ -15,8 +15,14 @@ def weights_distance(weights_a, weights_b, n, k):
         result = 0
         for i in range(n):
             for j in range(n):
-                if i > k or j > k:
-                    result += abs(weights_a[i][j]-weights_b[map[i-k]][map[j-k]])
+                if i > k:
+                    if j > k:
+                        result += abs(weights_a[i][j]-weights_b[map[i-k]][map[j-k]])
+                    else:
+                        result += abs(weights_a[i][j]-weights_b[map[i-k]][j])
+                elif j > k:
+                    result += abs(weights_a[i][j]-weights_b[i][map[j-k]])
+                    
         if result < best_result:
             best_result = result
 
@@ -42,7 +48,7 @@ def nn_weights_and_start_values(models, m, input_size, extend_size):
     best_cost = 1000
     best_model = None
     for model in models:
-        cost = weights_distance(model.weights, m.weights)
+        cost = weights_distance(model.weights, m.weights, input_size+extend_size, input_size)
         cost += sum(consts.E(input_size+extend_size, input_size).dot(model.start_values-m.start_values))
         if cost < best_cost:
             best_model = model

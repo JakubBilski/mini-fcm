@@ -13,21 +13,21 @@ def compare_solutions(train_models, test_models, test_xs, test_ys, input_size, e
         best_fit = comparing.nn_weights(train_models, test_model, input_size+extend_size, input_size)
         if best_fit.get_class() != test_model.get_class():
             mistakes += 1
-    print(f"nn_weights accuracy: {1-mistakes/len(test_models)}")
+    print(f"nn_weights accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
 
     mistakes = 0
     for test_model in tqdm(test_models):
         best_fit = comparing.nn_weights_and_start_values(train_models, test_model, input_size, extend_size)
         if best_fit.get_class() != test_model.get_class():
             mistakes += 1
-    print(f"nn_weights_and_start_values accuracy: {1-mistakes/len(test_models)}")
+    print(f"nn_weights_and_start_values accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
 
     mistakes = 0
     for test_model, xs in tqdm(zip(test_models, test_xs)):
         best_fit = comparing.best_prediction(train_models, xs)
         if best_fit.get_class() != test_model.get_class():
             mistakes += 1
-    print(f"best_prediction accuracy: {1-mistakes/len(test_models)}")
+    print(f"best_prediction accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
 
 def generate_checkpoints():
     extended_size = 3

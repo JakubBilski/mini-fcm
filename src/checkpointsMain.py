@@ -60,10 +60,18 @@ if __name__ == "__main__":
     # xses_series, ys = loadArff.load_basic_motions(input_file)
     # compare_solutions(train_models, test_models, xses_series, ys, 6, 3)
 
+    # checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/train')
+    # checkpoints_test_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/test')
+    # input_file = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
+    # train_models = checkpoints.load_chosen_step_checkpoints(checkpoints_train_dir)
+    # test_models = checkpoints.load_chosen_step_checkpoints(checkpoints_test_dir)
+    # xses_series, ys = loadArff.load_cricket_normalized(input_file)
+    # compare_solutions(train_models, test_models, xses_series, ys, 6, 3)
+
     checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/train')
-    checkpoints_test_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/test')
-    input_file = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
-    train_models = checkpoints.load_chosen_step_checkpoints(checkpoints_train_dir)
-    test_models = checkpoints.load_chosen_step_checkpoints(checkpoints_test_dir)
-    xses_series, ys = loadArff.load_cricket_normalized(input_file)
-    compare_solutions(train_models, test_models, xses_series, ys, 6, 3)
+    # checkpoints_test_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/test')
+    input_file = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
+    train_paths = checkpoints.load_checkpoints(checkpoints_train_dir)
+    for step in range(len(train_paths[0].points)):
+        models = [train_path.points[step] for train_path in train_paths]
+        print(comparing.get_grouping_factor(models, 6, 3, 12))

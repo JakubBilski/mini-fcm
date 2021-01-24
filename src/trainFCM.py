@@ -1,4 +1,3 @@
-from sklearn.cluster import KMeans
 from tqdm import tqdm
 from datetime import datetime
 import numpy as np
@@ -114,30 +113,6 @@ def test_ecm_nn():
             print(f"Error: {class_prediction} should be {model.get_class()}")
             mismatches += 1
     print(f"Accuracy (weights and start values nn): {len(ys)-mismatches}/{len(ys)} ({100*(len(ys)-mismatches)/len(ys)}%)")
-
-
-def get_grouping_factor(models, input_size, extend_size, no_clusters, ys):
-    vects = [model.weights.flatten().tolist() for model in models]
-    for i in range(len(models)):
-        vects[i] = np.append(vects[i],
-            consts.E(input_size+extend_size, input_size).dot(models[i].start_values).flatten().tolist())
-
-    centers = np.zeros(shape=(no_clusters, len(vects[0])))
-    no_center_members = np.zeros(shape=(no_clusters))
-    for i in range(len(vects)):
-        cluster_class = int(models[i].get_class())
-        centers[cluster_class] += vects[i]
-        no_center_members[cluster_class] += 1
-    for c in range(centers.shape[0]):
-        centers[c] /= no_center_members[c]
-
-
-    kmeans = KMeans(n_clusters=no_clusters, init=centers).fit(vects)
-        
-    print(kmeans.labels_)
-    print(ys)
-
-    return sum(kmeans.labels_ == ys)/len(models)
 
 
 def small_steps_ecn_nn():

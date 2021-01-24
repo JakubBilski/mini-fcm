@@ -22,7 +22,7 @@ def create_checkpoints(input_path, output_path, learning_rate, steps, input_size
         file.write(training_path.to_json())
         file.close()
 
-def load_full_checkpoints(checkpoints_dir):
+def load_checkpoints(checkpoints_dir):
     training_paths = []
     for file_path in checkpoints_dir.iterdir():
         file = open(file_path, 'r')

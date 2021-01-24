@@ -1,18 +1,37 @@
 from . import consts
 
-def weights_distance(weights_a, weights_b):
-    result = 0
-    for i in range(len(weights_a)):
-        for j in range(len(weights_a[0])):
-            result += abs(weights_a[i][j]-weights_b[i][j])
-    return result
+maps = [
+    [6, 7, 8]
+    [6, 8, 7]
+    [7, 6, 8]
+    [7, 8, 6]
+    [8, 6, 7]
+    [8, 7, 6]
+]
+
+def weights_distance(weights_a, weights_b, n, k):
+    best_result = 10000
+    for map in maps:
+        result = 0
+        for i in range(n):
+            for j in range(n):
+                if i > k or j > k:
+                    result += abs(weights_a[i][j]-weights_b[map[i-k]][map[j-k]])
+        if result < best_result:
+            best_result = result
+
+    for i in range(k):
+        for j in range(k):
+            best_result += abs(weights_a[i][j]-weights_b[i][j])
+
+    return best_result
 
 
-def nn_weights(models, m):
+def nn_weights(models, m, n, k):
     best_cost = 1000
     best_model = None
     for model in models:
-        cost = weights_distance(model.weights, m.weights)
+        cost = weights_distance(model.weights, m.weights, n, k)
         if cost < best_cost:
             best_model = model
             best_cost = cost

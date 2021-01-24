@@ -10,7 +10,7 @@ from cognitiveMaps import checkpoints
 def compare_solutions(train_models, test_models, test_xs, test_ys, input_size, extend_size):
     mistakes = 0
     for test_model in tqdm(test_models):
-        best_fit = comparing.nn_weights(train_models, test_model)
+        best_fit = comparing.nn_weights(train_models, test_model, input_size+extend_size, input_size)
         if best_fit.get_class() != test_model.get_class():
             mistakes += 1
     print(f"nn_weights accuracy: {1-mistakes/len(test_models)}")

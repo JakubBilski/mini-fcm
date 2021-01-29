@@ -9,6 +9,7 @@ class ExtendedCognitiveMap(FuzzyCognitiveMap):
         super().__init__(weights=None)
         self.k = k
         self.n = n
+        np.random.seed = 0
         self.start_values = np.random.rand(n)
         self.weights = np.random.rand(n,n)
 
@@ -135,7 +136,7 @@ class ExtendedCognitiveMap(FuzzyCognitiveMap):
         weights = self.weights
         A = consts.A(n,k)
         B = consts.B(n,k)
-        D = consts.C(n,k)
+        D = consts.D(n,k)
         expected_output = input_in_time[1:]
         input_in_time = input_in_time[:-1]
         error = 0

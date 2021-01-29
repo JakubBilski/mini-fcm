@@ -43,6 +43,8 @@ class ECMTrainingPath:
         ecm.weights = np.asarray(d['weights'][step]) 
         ecm.start_values = np.asarray(d['start_values'][step])
         ecm.set_class(class_name)
+        ecm.n = n
+        ecm.k = k
         return ecm
 
         

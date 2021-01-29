@@ -1,4 +1,5 @@
 from tqdm import tqdm
+import numpy as np
 import pathlib
 import os
 
@@ -7,32 +8,42 @@ from cognitiveMaps import comparing
 from cognitiveMaps import checkpoints
 
 
-def compare_solutions(train_models, test_models, test_xs, test_ys, input_size, extend_size):
+def compare_solutions(train_models, test_models, test_xs, test_ys, input_size, extend_size, no_classes):
     mistakes = 0
-    for test_model in tqdm(test_models):
+    for test_model in test_models:
         best_fit = comparing.nn_weights(train_models, test_model, input_size+extend_size, input_size)
         if best_fit.get_class() != test_model.get_class():
+            # print(f"{best_fit.get_class()} should be {test_model.get_class()}")
+            # print(f"{best_fit} won")
             mistakes += 1
     print(f"nn_weights accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
 
     mistakes = 0
-    for test_model in tqdm(test_models):
+    for test_model in test_models:
         best_fit = comparing.nn_weights_and_start_values(train_models, test_model, input_size, extend_size)
         if best_fit.get_class() != test_model.get_class():
             mistakes += 1
     print(f"nn_weights_and_start_values accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
 
+    # mistakes = 0
+    # for test_model, xs in tqdm(zip(test_models, test_xs)):
+    #     best_fit = comparing.best_prediction(train_models, xs)
+    #     if best_fit.get_class() != test_model.get_class():
+    #         mistakes += 1
+    # print(f"best_prediction accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
     mistakes = 0
-    for test_model, xs in tqdm(zip(test_models, test_xs)):
-        best_fit = comparing.best_prediction(train_models, xs)
-        if best_fit.get_class() != test_model.get_class():
+    for test_model in test_models:
+        fit_class = comparing.best_mse_sum(train_models, test_model, no_classes)
+        if fit_class != test_model.get_class():
             mistakes += 1
-    print(f"best_prediction accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
+    print(f"best_mse_sum accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
+
+
 
 def generate_checkpoints():
-    extended_size = 3
+    extended_size = 0
     learning_rate = 0.002
-    steps = 1
+    steps = 10
     input_size = 6
     
     # os.mkdir('./checkpoints/ecm/BasicMotions/')
@@ -49,8 +60,8 @@ def generate_checkpoints():
     )
 
 if __name__ == "__main__":
-    # generate_checkpoints()
 
+    # generate_checkpoints()
 
     # checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/BasicMotions/3_0.002/train')
     # checkpoints_test_dir = pathlib.Path('./checkpoints/ecm/BasicMotions/3_0.002/test')
@@ -62,16 +73,36 @@ if __name__ == "__main__":
 
     # checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/train')
     # checkpoints_test_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/test')
-    # input_file = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
+    # # input_file = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
     # train_models = checkpoints.load_chosen_step_checkpoints(checkpoints_train_dir)
     # test_models = checkpoints.load_chosen_step_checkpoints(checkpoints_test_dir)
-    # xses_series, ys = loadArff.load_cricket_normalized(input_file)
-    # compare_solutions(train_models, test_models, xses_series, ys, 6, 3)
+    # # xses_series, ys = loadArff.load_cricket_normalized(input_file)
+    # compare_solutions(train_models, test_models, None, None, 6, 3)
 
+    # solution comparison step by step
     checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/train')
+    checkpoints_test_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/test')
+    # input_file = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
+    train_training_paths = checkpoints.load_checkpoints(checkpoints_train_dir)
+    test_training_paths = checkpoints.load_checkpoints(checkpoints_test_dir)
+    for step in range(len(train_training_paths[0].points)):
+        print(f"Step {step}")
+        train_models = [tp.points[step] for tp in train_training_paths]
+        test_models = [tp.points[step] for tp in test_training_paths]
+    # xses_series, ys = loadArff.load_cricket_normalized(input_file)
+        compare_solutions(train_models, test_models, None, None, 6, 3, 12)
+
+    # checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/train')
     # checkpoints_test_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/test')
-    input_file = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
-    train_paths = checkpoints.load_checkpoints(checkpoints_train_dir)
-    for step in range(len(train_paths[0].points)):
-        models = [train_path.points[step] for train_path in train_paths]
-        print(comparing.get_grouping_factor(models, 6, 3, 12))
+    # train_paths = checkpoints.load_checkpoints(checkpoints_test_dir)
+    # for step in range(len(train_paths[0].points)):
+    #     models = [train_path.points[step] for train_path in train_paths]
+    #     print(comparing.get_grouping_factor(models, 6, 3, 12))
+
+    # checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/test')
+    # input_file = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
+    # xses_series, ys = loadArff.load_cricket_normalized(input_file)
+    # train_paths = checkpoints.load_checkpoints(checkpoints_train_dir)
+    # for train_path, xs in zip(train_paths, xses_series):
+    #     print(f"New train path (class {train_path.class_name})")
+    #     print([train_path.points[step].get_error(xs) for step in range(len(train_path.points))])

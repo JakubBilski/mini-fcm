@@ -1,5 +1,6 @@
 from sklearn.cluster import KMeans
 import numpy as np
+import warnings
 
 from . import consts
 
@@ -43,12 +44,12 @@ def nn_weights(models, m, n, k):
     best_cost = 1000
     best_model = None
     for model in models:
-        cost = weights_distance_old(model.weights, m.weights)
+        cost = weights_distance(model.weights, m.weights, n, k)
         if cost < best_cost:
             best_model = model
             best_cost = cost
     # print(f"Costs: {[weights_distance_old(model.weights, m.weights) for model in models]}")
-    return best_model
+    return best_model, best_cost
 
 
 def nn_weights_and_start_values(models, m, input_size, extend_size):
@@ -88,36 +89,42 @@ def best_prediction(models, xs):
             best_cost = cost
     return best_model
 
+
 def best_mse_sum(models, m, no_classes):
     costs = [0 for _ in range(no_classes)]
+    dividers = [0 for _ in range(no_classes)]
     for model in models:
         cost = weights_distance_old(model.weights, m.weights)
         costs[int(model.get_class())-1] += cost
+        dividers[int(model.get_class())-1] += 1
     # print(f"Costs: {[weights_distance_old(model.weights, m.weights) for model in models]}")
-    return costs.index(min(costs))+1
+    mean_cost = [costs[i]/dividers[i] for i in range(no_classes)]
+    return mean_cost.index(min(mean_cost))+1, min(mean_cost)
+
 
 def get_grouping_factor(models, input_size, extend_size, no_clusters):
-    vects = [model.weights.flatten().tolist() for model in models]
-    for i in range(len(models)):
-        vects[i] = np.append(vects[i],
-            consts.E(input_size+extend_size, input_size).dot(models[i].start_values).flatten().tolist())
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        vects = [model.weights.flatten().tolist() for model in models]
+        for i in range(len(models)):
+            vects[i] = np.append(vects[i],
+                consts.E(input_size+extend_size, input_size).dot(models[i].start_values).flatten().tolist())
 
-    centers = np.zeros(shape=(no_clusters, len(vects[0])))
-    no_center_members = np.zeros(shape=(no_clusters))
-    for i in range(len(vects)):
-        cluster_class = int(models[i].get_class())-1
-        centers[cluster_class] += vects[i]
-        no_center_members[cluster_class] += 1
-    for c in range(centers.shape[0]):
-        centers[c] /= no_center_members[c]
+        centers = np.zeros(shape=(no_clusters, len(vects[0])))
+        no_center_members = np.zeros(shape=(no_clusters))
+        for i in range(len(vects)):
+            cluster_class = int(models[i].get_class())-1
+            centers[cluster_class] += vects[i]
+            no_center_members[cluster_class] += 1
+        for c in range(centers.shape[0]):
+            centers[c] /= no_center_members[c]
 
 
-    kmeans = KMeans(n_clusters=no_clusters, init=centers).fit(vects)
-        
+        kmeans = KMeans(n_clusters=no_clusters, init=centers).fit(vects)
+            
 
-    classes = [int(model.get_class()-1) for model in models]
+        classes = [int(model.get_class()-1) for model in models]
 
-    # print(kmeans.labels_)
-    # print(classes)
-
+        # print(kmeans.labels_)
+        # print(classes)
     return sum(kmeans.labels_ == classes)/len(models)

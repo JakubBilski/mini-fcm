@@ -3,10 +3,10 @@ import numpy as np
 import pathlib
 import os
 
-from loadingData import loadArff
-from cognitiveMaps import comparing
 from cognitiveMaps import checkpoints
 from cognitiveMaps import displaying
+from cognitiveMaps import comparing
+from loadingData import loadArff
 
 
 def compare_solutions(train_models, test_models, test_xs, test_ys, input_size, extend_size, no_classes):
@@ -74,7 +74,6 @@ def generate_checkpoints():
     learning_rate = 0.002
     steps = 10
     input_size = 6
-    
     # os.mkdir('./checkpoints/ecm/BasicMotions/')
     output_path = pathlib.Path(f'./checkpoints/ecm/Cricket/{extended_size}_{learning_rate}')
     # os.mkdir(output_path)

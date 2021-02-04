@@ -4,6 +4,7 @@ from datetime import datetime
 import copy
 import os
 from multiprocessing.dummy import Pool as ThreadPool
+import multiprocessing as mp
 
 from examiningConvergence.examineConvergence import examineConvergence
 
@@ -16,20 +17,25 @@ plots_dir = pathlib.Path(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}
 
 def create_checkpoints(input_path, output_path, learning_rate, steps, input_size, extended_size):
     xses_series, ys = loadArff.load_cricket_normalized(input_path)
-    config = (output_path, learning_rate, steps, input_size, extended_size)
+    config = (learning_rate, steps, input_size, extended_size)
     configs = [(config, i) for i in range(len(ys))]
     
+    print(mp.cpu_count())
     # os.mkdir(plots_dir)
     pool = ThreadPool(4)
-    
-    for result in tqdm(pool.imap_unordered(create_checkpoint, zip(xses_series, ys, configs))):
-        print(result)
+    unique_file_id = 0
 
+    for training_path in tqdm(pool.imap_unordered(create_training_path, zip(xses_series, ys, configs))):
+        file = open(output_path / f'training_path{unique_file_id}.json', 'w+')
+        unique_file_id += 1
+        file.write(training_path.to_json())
+        file.close()
+    pool.close()
 
-def create_checkpoint(args):
+def create_training_path(args):
     xs, y, config = args
     config, i = config
-    output_path, learning_rate, steps, input_size, extended_size = config
+    learning_rate, steps, input_size, extended_size = config
     training_path = ECMTrainingPath(learning_rate, y)
     ecm = ExtendedCognitiveMap(input_size, input_size+extended_size)
     ecm.set_class(y)
@@ -37,10 +43,8 @@ def create_checkpoint(args):
     for step in range(steps):
         ecm.train_step(xs, learning_rate)
         training_path.points.append(copy.deepcopy(ecm))
-    file = open(output_path / f'training_path{i}.json', 'w+')
-    file.write(training_path.to_json())
-    file.close()
-    return f"{i} finished"
+    return training_path
+
 
 
 def load_checkpoints(checkpoints_dir):

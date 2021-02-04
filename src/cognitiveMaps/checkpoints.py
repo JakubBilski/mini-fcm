@@ -20,9 +20,8 @@ def create_checkpoints(input_path, output_path, learning_rate, steps, input_size
     config = (learning_rate, steps, input_size, extended_size)
     configs = [(config, i) for i in range(len(ys))]
     
-    print(mp.cpu_count())
     # os.mkdir(plots_dir)
-    pool = ThreadPool(4)
+    pool = ThreadPool()
     unique_file_id = 0
 
     for training_path in tqdm(pool.imap_unordered(create_training_path, zip(xses_series, ys, configs))):

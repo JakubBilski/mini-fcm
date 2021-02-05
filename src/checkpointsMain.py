@@ -3,7 +3,7 @@ import numpy as np
 import pathlib
 import os
 
-from cognitiveMaps import checkpoints
+from cognitiveMaps import ecmCheckpoints
 from cognitiveMaps import displaying
 from cognitiveMaps import comparing
 from loadingData import loadArff
@@ -68,7 +68,6 @@ def compare_solutions(train_models, test_models, test_xs, test_ys, input_size, e
     print(f"best_mse_sum accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
 
 
-
 def generate_checkpoints():
     extended_size = 3
     learning_rate = 0.002
@@ -78,7 +77,7 @@ def generate_checkpoints():
     output_path = pathlib.Path(f'./checkpoints/ecm/Cricket/{extended_size}_{learning_rate}')
     # os.mkdir(output_path)
     os.mkdir(output_path / 'test/')
-    checkpoints.create_checkpoints(
+    ecmCheckpoints.create_checkpoints(
         './data/Cricket/CRICKET_TEST.arff',
         output_path / 'test/',
         learning_rate,
@@ -89,7 +88,7 @@ def generate_checkpoints():
 
 if __name__ == "__main__":
 
-    generate_checkpoints()
+    # generate_checkpoints()
 
     # checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/BasicMotions/3_0.002/train')
     # checkpoints_test_dir = pathlib.Path('./checkpoints/ecm/BasicMotions/3_0.002/test')
@@ -107,7 +106,7 @@ if __name__ == "__main__":
     # # xses_series, ys = loadArff.load_cricket_normalized(input_file)
     # compare_solutions(test_models, train_models, None, None, 6, 3, 12)
 
-    # # solution comparison step by step
+    # # solution comparison
     # checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/train')
     # checkpoints_test_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/test')
     # input_file = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
@@ -120,6 +119,7 @@ if __name__ == "__main__":
     #     test_models = [tp.points[step] for tp in test_training_paths]
     #     compare_solutions(test_models, test_models, xses_series, None, 6, 3, 12)
 
+    # # examine grouping factor based on k-means
     # checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002_big_free_seed/train')
     # checkpoints_test_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002_big_free_seed/test')
     # train_paths = checkpoints.load_checkpoints(checkpoints_train_dir)
@@ -132,11 +132,11 @@ if __name__ == "__main__":
     #     print(f"test grouping factor: {comparing.get_grouping_factor(test_models, 6, 3, 12)}")
     #     print(f"all grouping factor: {comparing.get_grouping_factor(test_models+train_models, 6, 3, 12)}")
 
-
-    # checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/train')
-    # input_file = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
-    # xses_series, ys = loadArff.load_cricket_normalized(input_file)
-    # train_paths = checkpoints.load_checkpoints(checkpoints_train_dir)
-    # for train_path, xs in zip(train_paths, xses_series):
-    #     print(f"New train path (class {train_path.class_name})")
-    #     print([train_path.points[step].get_error(xs) for step in range(len(train_path.points))])
+    # examine error of ecms
+    checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/train')
+    input_file = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
+    xses_series, ys = loadArff.load_cricket_normalized(input_file)
+    train_paths = ecmCheckpoints.load_checkpoints(checkpoints_train_dir)
+    for train_path, xs, y in zip(train_paths, xses_series, ys):
+        print(f"New train path (class {train_path.class_name})")
+        print([train_path.points[step].get_error(xs) for step in range(len(train_path.points))])

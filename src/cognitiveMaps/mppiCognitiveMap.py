@@ -2,10 +2,8 @@ import numpy as np
 
 from cognitiveMaps.baseCognitiveMap import BaseCognitiveMap
 
-from . import displaying
 
-
-class FuzzyCognitiveMap(BaseCognitiveMap):
+class MppiCognitiveMap(BaseCognitiveMap):
     def __init__(self, weights=None):
         self.class_name = ""
         self.weights = weights
@@ -29,7 +27,7 @@ class FuzzyCognitiveMap(BaseCognitiveMap):
         error = 0
         for i in range(len(input_in_time)-1):
             weights = np.matrix(self.weights)
-            result = FuzzyCognitiveMap.f(weights.dot(input_in_time[i]))
+            result = MppiCognitiveMap.f(weights.dot(input_in_time[i]))
             result -= expected_output[i]
             error += result.dot(np.transpose(result))
         return error

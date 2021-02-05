@@ -60,7 +60,7 @@ class ExtendedCognitiveMap(BaseCognitiveMap):
         self.start_values = ys[0]
 
 
-    def train(self, input_in_time, learning_rate=0.002, steps=20):
+    def train(self, input_in_time, learning_rate, steps):
         k = self.k
         n = self.n
         xs = input_in_time

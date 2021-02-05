@@ -24,16 +24,15 @@ class BaseCognitiveMap:
 
     
     def _calculate_convergence_pnt(self, input_data, max_iterations):
-        output = input_data.transpose()
-        weights = np.matrix(self.weights)
+        output = input_data
         for i in range(max_iterations):
-            buffer = BaseCognitiveMap.f(weights @ output)
+            buffer = BaseCognitiveMap.f(self.weights.dot(output))
             if (buffer == output).all():
                 # print(f"fixed-point attractor found after {i} steps")
                 break
             # print(output[1])
             output, buffer = buffer, output
-        self.conv_pnt = output.transpose()
+        self.conv_pnt = output
 
 
     def display_plot(self, save_path=None):

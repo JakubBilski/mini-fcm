@@ -4,9 +4,10 @@ from cognitiveMaps.baseCognitiveMap import BaseCognitiveMap
 
 
 class MppiCognitiveMap(BaseCognitiveMap):
-    def __init__(self, weights=None):
+    def __init__(self, n):
         self.class_name = ""
-        self.weights = weights
+        self.weights = np.random.rand(n,n)
+        self.n = n
         self.conv_pnt = None
 
 

@@ -7,6 +7,8 @@ from multiprocessing.dummy import Pool as ThreadPool
 from loadingData import loadArff
 from .extendedCognitiveMap import ExtendedCognitiveMap
 
+USE_MULTIPROCESSING = False
+
 class ECMTrainingPath:
     def __init__(self, learning_rate, class_name, input_data_index) -> None:
         self.points = []
@@ -60,22 +62,31 @@ def create_checkpoints(input_path, output_path, learning_rate, steps, input_size
     config = (learning_rate, steps, input_size, extended_size)
     configs = [(config, i) for i in range(len(ys))]
     
-    pool = ThreadPool()
-    unique_file_id = 0
+    if USE_MULTIPROCESSING:
+        pool = ThreadPool()
+        unique_file_id = 0
 
-    for training_path in tqdm(pool.imap_unordered(_create_training_path, zip(xses_series, ys, configs))):
-        file = open(output_path / f'training_path{unique_file_id}.json', 'w+')
-        unique_file_id += 1
-        file.write(training_path.to_json())
-        file.close()
-    pool.close()
+        for training_path in tqdm(pool.imap_unordered(_create_training_path, zip(xses_series, ys, configs))):
+            file = open(output_path / f'training_path{unique_file_id}.json', 'w+')
+            unique_file_id += 1
+            file.write(training_path.to_json())
+            file.close()
+        pool.close()
+    else:
+        unique_file_id = 0
+        for traning_path_input in tqdm(zip(xses_series, ys, configs)):
+            training_path = _create_training_path(traning_path_input)
+            file = open(output_path / f'training_path{unique_file_id}.json', 'w+')
+            unique_file_id += 1
+            file.write(training_path.to_json())
+            file.close()
 
 
 def _create_training_path(args):
     xs, y, config = args
     config, i = config
     learning_rate, steps, input_size, extended_size = config
-    training_path = ECMTrainingPath(learning_rate, y)
+    training_path = ECMTrainingPath(learning_rate, y, i)
     ecm = ExtendedCognitiveMap(input_size, input_size+extended_size)
     ecm.set_class(y)
     training_path.points.append(copy.deepcopy(ecm))

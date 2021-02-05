@@ -13,6 +13,7 @@ maps = [
     [8, 7, 6]
 ]
 
+
 def weights_distance(weights_a, weights_b, n, k):
     best_result = 10000
     for map in maps:
@@ -21,12 +22,12 @@ def weights_distance(weights_a, weights_b, n, k):
             for j in range(n):
                 if i > k:
                     if j > k:
-                        result += abs(weights_a[i][j]-weights_b[map[i-k]][map[j-k]])
+                        result += abs(weights_a[i][j]-weights_b[map[i-k]][map[j-k]])  # noqa: E501
                     else:
                         result += abs(weights_a[i][j]-weights_b[map[i-k]][j])
                 elif j > k:
                     result += abs(weights_a[i][j]-weights_b[i][map[j-k]])
-                    
+
         if result < best_result:
             best_result = result
 
@@ -35,6 +36,7 @@ def weights_distance(weights_a, weights_b, n, k):
             best_result += abs(weights_a[i][j]-weights_b[i][j])
 
     return best_result
+
 
 def weights_distance_old(weights_a, weights_b):
     return np.absolute(weights_a-weights_b).sum()
@@ -48,7 +50,6 @@ def nn_weights(models, m, n, k):
         if cost < best_cost:
             best_model = model
             best_cost = cost
-    # print(f"Costs: {[weights_distance_old(model.weights, m.weights) for model in models]}")
     return best_model, best_cost
 
 
@@ -57,7 +58,9 @@ def nn_weights_and_start_values(models, m, input_size, extend_size):
     best_model = None
     for model in models:
         cost = weights_distance_old(model.weights, m.weights)
-        cost += sum(consts.E(input_size+extend_size, input_size).dot(model.start_values-m.start_values))
+        cost += sum(consts.E(
+                input_size+extend_size, input_size
+            ).dot(model.start_values-m.start_values))
         if cost < best_cost:
             best_model = model
             best_cost = cost
@@ -82,7 +85,6 @@ def best_prediction(models, xs):
     best_model = None
     for model in models:
         predicted_xs = model.predict(xs, len(xs))
-        # print(f"Model {model.get_class()} predicted {predicted_xs[len(xs)-1]} (should be {xs[len(xs)-1]})")
         cost = ((predicted_xs - xs)**2).mean()
         if cost < best_cost:
             best_model = model
@@ -97,7 +99,6 @@ def best_mse_sum(models, m, no_classes):
         cost = weights_distance_old(model.weights, m.weights)
         costs[int(model.get_class())-1] += cost
         dividers[int(model.get_class())-1] += 1
-    # print(f"Costs: {[weights_distance_old(model.weights, m.weights) for model in models]}")
     mean_cost = [costs[i]/dividers[i] for i in range(no_classes)]
     return mean_cost.index(min(mean_cost))+1, min(mean_cost)
 
@@ -108,7 +109,11 @@ def get_grouping_factor(models, input_size, extend_size, no_clusters):
         vects = [model.weights.flatten().tolist() for model in models]
         for i in range(len(models)):
             vects[i] = np.append(vects[i],
-                consts.E(input_size+extend_size, input_size).dot(models[i].start_values).flatten().tolist())
+                                 consts.E(
+                    input_size+extend_size,
+                    input_size
+                    ).dot(models[i].start_values).flatten().tolist()
+                )
 
         centers = np.zeros(shape=(no_clusters, len(vects[0])))
         no_center_members = np.zeros(shape=(no_clusters))
@@ -119,9 +124,7 @@ def get_grouping_factor(models, input_size, extend_size, no_clusters):
         for c in range(centers.shape[0]):
             centers[c] /= no_center_members[c]
 
-
         kmeans = KMeans(n_clusters=no_clusters, init=centers).fit(vects)
-            
 
         classes = [int(model.get_class()-1) for model in models]
 

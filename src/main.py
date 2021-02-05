@@ -1,3 +1,4 @@
+# flake8: noqa
 from tqdm import tqdm
 import numpy as np
 import pathlib
@@ -7,6 +8,8 @@ from cognitiveMaps import ecmCheckpoints
 from cognitiveMaps import fcmCheckpoints
 from cognitiveMaps import displaying
 from cognitiveMaps import comparing
+from transformingData import cmeans
+from transformingData import derivatives
 from cognitiveMaps.mppiCognitiveMap import MppiCognitiveMap
 from loadingData import loadArff
 
@@ -51,14 +54,14 @@ def compare_solutions(train_models, test_models, test_xs, test_ys, input_size, e
     #     if best_fit.get_class() != test_model.get_class():
     #         mistakes += 1
     # print(f"best_prediction accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
-
-    mistakes = 0
-    for test_model, input_data_index in test_models:
-        train_models_without_same = [m for m, _ in train_models if (m.weights != test_model.weights).any()]
-        best_fit = comparing.nn_convergence(train_models_without_same, test_model, test_xs[input_data_index][0])
-        if best_fit.get_class() != test_model.get_class():
-            mistakes += 1
-    print(f"nn_convergence accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
+    if test_xs:
+        mistakes = 0
+        for test_model, input_data_index in test_models:
+            train_models_without_same = [m for m, _ in train_models if (m.weights != test_model.weights).any()]
+            best_fit = comparing.nn_convergence(train_models_without_same, test_model, test_xs[input_data_index][0])
+            if best_fit.get_class() != test_model.get_class():
+                mistakes += 1
+        print(f"nn_convergence accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
 
 
 
@@ -76,41 +79,91 @@ def generate_ecm_checkpoints():
     learning_rate = 0.002
     steps = 2
     input_size = 6
-    # os.mkdir('./checkpoints/ecm/BasicMotions/')
     input_path = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
-    output_path = pathlib.Path(f'./checkpoints/ecm/Cricket/{extended_size}_{learning_rate}/train/')
+    output_path = pathlib.Path(f'./checkpoints/Cricket/ecm/{extended_size}_{learning_rate}/train/')
     # os.mkdir(output_path)
     os.mkdir(output_path)
+    xses_series, ys = loadArff.load_cricket_normalized(input_path)
     ecmCheckpoints.create_checkpoints(
-        input_path,
+        xses_series,
+        ys,
         output_path,
         learning_rate,
         steps,
         input_size,
-        extended_size
-    )
+        extended_size)
 
 
 def generate_fcm_checkpoints():
     learning_rate = 0.002
-    steps = 50
+    steps = 10
     input_size = 6
-    # os.mkdir('./checkpoints/ecm/BasicMotions/')
     input_path = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
-    output_path = pathlib.Path(f'./checkpoints/fcm/Cricket/{learning_rate}/train/')
+    output_path = pathlib.Path(f'./checkpoints/Cricket/fcm/{learning_rate}/train/')
     # os.mkdir(output_path)
     os.mkdir(output_path)
+    xses_series, ys = loadArff.load_cricket_normalized(input_path)
     fcmCheckpoints.create_checkpoints(
-        input_path,
+        xses_series,
+        ys,
         output_path,
         learning_rate,
         steps,
-        input_size
-    )
+        input_size)
+
+
+def generate_fcm_cmeans_checkpoints(learning_rate, derivative_order, no_centers, steps):
+    input_size = 6
+    input_path = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
+    output_path = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{learning_rate}_{derivative_order}/train/')
+    # os.mkdir(output_path)
+    os.mkdir(output_path)
+    xses_series, ys = loadArff.load_cricket_normalized(input_path)
+    if derivative_order > 0:
+        xses_series = derivatives.transform(xses_series, derivative_order)
+    centers, xses_series = cmeans.find_centers_and_transform(xses_series, c=no_centers)
+
+    fcmCheckpoints.create_checkpoints(
+        xses_series,
+        ys,
+        output_path,
+        learning_rate,
+        steps,
+        input_size=no_centers,
+        cmeans_centers=centers)
+    input_path = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
+    output_path = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{learning_rate}_{derivative_order}/test/')
+    # os.mkdir(output_path)
+    os.mkdir(output_path)
+    xses_series, ys = loadArff.load_cricket_normalized(input_path)
+    if derivative_order > 0:
+        xses_series = derivatives.transform(xses_series, derivative_order)
+    xses_series = cmeans.transform(xses_series, centers=centers)
+    fcmCheckpoints.create_checkpoints(
+        xses_series,
+        ys,
+        output_path,
+        learning_rate,
+        steps,
+        input_size=no_centers,
+        cmeans_centers=centers)
+
 
 if __name__ == "__main__":
 
-    # generate_fcm_checkpoints()
+    for no_centers in range(2,10):
+        for derivative_order in [0,1,2]:
+            os.mkdir(pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/'))
+
+    # for no_centers in range(2,10):
+    #     for derivative_order in [0,1,2]:
+    #         print(f"Learning no_centers {no_centers}, derivative_order {derivative_order}")
+    #         generate_fcm_cmeans_checkpoints(
+    #             no_centers=no_centers,
+    #             derivative_order=derivative_order,
+    #             steps=200,
+    #             learning_rate=0.002
+    #         )
 
     # # solution comparison for ecms
     # checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/train')
@@ -147,25 +200,31 @@ if __name__ == "__main__":
     #     print(f"New train path (class {train_path.class_name})")
     #     if train_path.class_name != ys[train_path.input_data_index]:
     #         print("Mismatch!")
+    #     if train_path.cmeans_centers:
+    #         xses_series = cmeans.transform(xses_series, train_path.k, train_path.cmeans_centers)
     #     print([train_path.points[step].get_error(xses_series[train_path.input_data_index])
     #         for step in range(len(train_path.points))])
 
     
     # # examine error of fcms
-    # checkpoints_train_dir = pathlib.Path('./checkpoints/fcm/Cricket/0.002/train')
+    # derivative_order = 2
+    # checkpoints_train_dir = pathlib.Path('./checkpoints/Cricket/fcm_cmeans/2_0.002_2/train')
     # input_file = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
     # xses_series, ys = loadArff.load_cricket_normalized(input_file)
     # train_paths = fcmCheckpoints.load_checkpoints(checkpoints_train_dir)
+    # xses_series = derivatives.transform(xses_series, derivative_order)
+    # if train_paths[0].cmeans_centers is not None:
+    #     xses_series = cmeans.transform(xses_series, train_paths[0].cmeans_centers)
     # for train_path in train_paths:
     #     print(f"New train path (class {train_path.class_name})")
     #     if train_path.class_name != ys[train_path.input_data_index]:
     #         print("Mismatch!")
-    #     print([train_path.points[step].get_error(xses_series[train_path.input_data_index])
-    #         for step in range(len(train_path.points))])
+    #     xs = xses_series[train_path.input_data_index]
+    #     print([train_path.points[step].get_error(xs) for step in range(len(train_path.points))])
 
     # # solution comparison for fcms
-    # checkpoints_train_dir = pathlib.Path('./checkpoints/fcm/Cricket/0.002/train')
-    # checkpoints_test_dir = pathlib.Path('./checkpoints/fcm/Cricket/0.002/test')
+    # checkpoints_train_dir = pathlib.Path('./checkpoints/Cricket/fcm_cmeans/6_0.002_2/train')
+    # checkpoints_test_dir = pathlib.Path('./checkpoints/Cricket/fcm_cmeans/6_0.002_2/test')
     # input_file = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
     # xses_series, ys = loadArff.load_cricket_normalized(input_file)
     # train_training_paths = fcmCheckpoints.load_checkpoints(checkpoints_train_dir)
@@ -174,7 +233,7 @@ if __name__ == "__main__":
     #     print(f"Step {step}")
     #     train_models = [(tp.points[step], tp.input_data_index) for tp in train_training_paths]
     #     test_models = [(tp.points[step], tp.input_data_index) for tp in test_training_paths]
-    #     compare_solutions(test_models, test_models, xses_series, None, 6, 0, 12)
+    #     compare_solutions(test_models, test_models, None, None, input_size=6, extend_size=0, no_classes=12)
 
 
     # # solution comparison for mppi

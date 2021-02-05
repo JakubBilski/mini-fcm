@@ -10,7 +10,7 @@ def draw_cognitive_map(weights, title=None, save_path=None):
         plt.title(title)
     graph = nx.DiGraph()
     if len(weights) != len(weights[0]):
-        print(f"Unable to draw graph: weights is {len(weights)}x{len(weights[0])}, not square");
+        print(f"Unable to draw graph: {len(weights)}!={len(weights[0])}")
         return
     edges = []
     max_weight_abs = 0.0
@@ -29,8 +29,14 @@ def draw_cognitive_map(weights, title=None, save_path=None):
         labels[i] = f"{i}\n{weights[i][i]:.2f}"
     graph.add_edges_from(edges)
     pos = nx.spring_layout(graph)
-    nx.draw_networkx_nodes(graph,pos,node_size=600, node_color="black")
-    nx.draw_networkx_labels(graph,pos,labels=labels,font_size=10,font_family='sans-serif', font_color='white')
+    nx.draw_networkx_nodes(graph, pos, node_size=600, node_color="black")
+    nx.draw_networkx_labels(
+        graph,
+        pos,
+        labels=labels,
+        font_size=10,
+        font_family='sans-serif',
+        font_color='white')
     edges = nx.draw_networkx_edges(
         graph,
         pos,
@@ -56,13 +62,14 @@ def draw_cognitive_map(weights, title=None, save_path=None):
         plt.show()
     plt.close()
 
+
 def draw_cognitive_maps(weightss, titles, save_path=None):
     colormap = plt.cm.bwr_r
     fig, axs = plt.subplots(2, 2, figsize=(14, 10))
     if titles:
         for title_no in range(len(titles)):
-            x = title_no//2
-            y = title_no%2
+            x = title_no // 2
+            y = title_no % 2
             weights = weightss[title_no]
             axs[x, y].set_title(titles[title_no])
             graph = nx.DiGraph()
@@ -83,8 +90,20 @@ def draw_cognitive_maps(weightss, titles, save_path=None):
                 labels[i] = f"{i}\n{weights[i][i]:.2f}"
             graph.add_edges_from(edges)
             pos = nx.spring_layout(graph)
-            nx.draw_networkx_nodes(graph,pos,node_size=600, node_color="black", ax=axs[x, y])
-            nx.draw_networkx_labels(graph,pos,labels=labels,font_size=10,font_family='sans-serif', font_color='white', ax=axs[x, y])
+            nx.draw_networkx_nodes(
+                graph,
+                pos,
+                node_size=600,
+                node_color="black",
+                ax=axs[x, y])
+            nx.draw_networkx_labels(
+                graph,
+                pos,
+                labels=labels,
+                font_size=10,
+                font_family='sans-serif',
+                font_color='white',
+                ax=axs[x, y])
             edges = nx.draw_networkx_edges(
                 graph,
                 pos,

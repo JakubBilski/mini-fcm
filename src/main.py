@@ -221,12 +221,12 @@ if __name__ == "__main__":
     #         for extended_size in [2, no_centers//2, no_centers]:
     #             os.mkdir(pathlib.Path(f'./checkpoints/Cricket/ecm_cmeans/{no_centers}_{0.002}_{derivative_order}_{extended_size}/'))
 
-    for no_centers in range(10,50):
+    for no_centers in range(2,50):
         for derivative_order in [0]:
             os.mkdir(pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/'))
 
 
-    for no_centers in range(10,50):
+    for no_centers in range(2,50):
         for derivative_order in [0]:
             print(f"Learning no_centers {no_centers}, derivative_order {derivative_order}")
             generate_fcm_cmeans_checkpoints(
@@ -235,6 +235,15 @@ if __name__ == "__main__":
                 steps=200,
                 learning_rate=0.002
             )
+
+
+    # print(f"Learning no_centers {4}, derivative_order {0}")
+    # generate_fcm_cmeans_checkpoints(
+    #     no_centers=4,
+    #     derivative_order=0,
+    #     steps=10,
+    #     learning_rate=0.002
+    # )
 
     # # solution comparison for ecms
     # checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/train')
@@ -278,12 +287,12 @@ if __name__ == "__main__":
 
     
     # # examine error of fcms
-    # derivative_order = 2
-    # checkpoints_train_dir = pathlib.Path('./checkpoints/Cricket/fcm_cmeans/2_0.002_2/train')
+    # # derivative_order = 0
+    # checkpoints_train_dir = pathlib.Path('./checkpoints/Cricket/fcm_cmeans/4_0.002_0/train')
     # input_file = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
     # xses_series, ys = loadArff.load_cricket_normalized(input_file)
     # train_paths = fcmCheckpoints.load_checkpoints(checkpoints_train_dir)
-    # xses_series = derivatives.transform(xses_series, derivative_order)
+    # # xses_series = derivatives.transform(xses_series, derivative_order)
     # if train_paths[0].cmeans_centers is not None:
     #     xses_series = cmeans.transform(xses_series, train_paths[0].cmeans_centers)
     # for train_path in train_paths:

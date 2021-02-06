@@ -23,20 +23,12 @@ class FuzzyCognitiveMap(BaseCognitiveMap):
                 FuzzyCognitiveMap.f(buff)-expected_output[time],
                 FuzzyCognitiveMap.fprim(buff)
                 )
-            buff = np.multiply(
-                buff,
-                np.ones(shape=(n, n)).dot(input_in_time[time])
-                )
+            buff = np.outer(buff, input_in_time[time])
             Pwprimes += buff
-        self.weights += -learning_rate*np.transpose(Pwprimes)
+        self.weights += -learning_rate*Pwprimes
 
     def train(self, input_in_time):
-        expected_output = input_in_time[1:]
-        input_in_time = input_in_time[:-1]
-        expected_output = np.array(expected_output)
-        input_in_time = np.array(input_in_time)
-        F_minus_Y = -np.log(-expected_output+1.001)
-        self.weights = np.linalg.pinv(input_in_time).dot(F_minus_Y)
+        raise Exception("Not implemented, lazy programmer")
 
     def get_error(self, input_in_time):
         expected_output = input_in_time[1:]

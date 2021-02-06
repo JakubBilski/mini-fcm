@@ -31,11 +31,13 @@ class ExtendedCognitiveMap(BaseCognitiveMap):
         Py0primes2 = np.zeros(shape=(p, n, n))
         Py0primes2[0] = np.eye(n)
         Ps = np.zeros(shape=(p, n))
-        P = 0
         for t in range(1, p):
             ys[t] = ExtendedCognitiveMap.f(W.dot(A.dot(xs[t-1]) + B.dot(ys[t-1])))
             buff = ExtendedCognitiveMap.fprim(W.dot(A.dot(xs[t-1])+B.dot(ys[t-1])))
             Ps[t] = C.dot(ys[t]) - A.dot(xs[t])
+
+
+
             for b in range(n):
                 for a in range(k):
                     yprimes[a*n+b][t] = W.dot(B.dot(yprimes[a*n+b][t-1]))
@@ -47,8 +49,8 @@ class ExtendedCognitiveMap(BaseCognitiveMap):
                     yprimes[a*n+b][t][b] += ys[t-1][a]
                     yprimes[a*n+b][t] = np.multiply(buff, yprimes[a*n+b][t])
                     Pwprimes[a][b] += np.transpose(2*Ps[t]).dot(yprimes[a*n+b][t])
+            
             Py0primes2[t] = Py0primes2[t-1].dot(buff.dot(B))
-            P += np.transpose(Ps[t]).dot(Ps[t])
         for t in range(1, p):
             Py0primes[t] = np.transpose(2*Ps[t]).dot(Py0primes2[t])
             Py0primes[t] = Py0primes[t] + Py0primes[t-1]

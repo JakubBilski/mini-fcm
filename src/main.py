@@ -3,11 +3,14 @@ from tqdm import tqdm
 import numpy as np
 import pathlib
 import os
+import matplotlib.pyplot as plt
 
 from cognitiveMaps import ecmCheckpoints
 from cognitiveMaps import fcmCheckpoints
 from cognitiveMaps import displaying
-from cognitiveMaps import comparing
+from cognitiveMaps import basicComparing
+from cognitiveMaps import rfClassifier
+from cognitiveMaps import svmClassifier
 from transformingData import cmeans
 from transformingData import derivatives
 from cognitiveMaps.mppiCognitiveMap import MppiCognitiveMap
@@ -16,12 +19,12 @@ from loadingData import loadArff
 
 def compare_solutions(train_models, test_models, test_xs, test_ys, input_size, extend_size, no_classes):
     mistakes = 0
-    for test_model, input_data_index in test_models:
-        train_models_without_same = [m for m, _ in train_models if (m.weights != test_model.weights).any()]
-        best_fit, best_cost = comparing.nn_weights(train_models_without_same, test_model, input_size+extend_size, input_size)
+    for test_model in test_models:
+        train_models_without_same = [m for m in train_models if (m.weights != test_model.weights).any()]
+        best_fit, best_cost = basicComparing.nn_weights(train_models_without_same, test_model, input_size+extend_size, input_size)
         if best_fit.get_class() != test_model.get_class():
             good_predictions = [m for m in train_models_without_same if m.get_class()==test_model.get_class()]
-            best_correct_fit, best_correct_cost = comparing.nn_weights(good_predictions, test_model, input_size+extend_size, input_size)
+            best_correct_fit, best_correct_cost = basicComparing.nn_weights(good_predictions, test_model, input_size+extend_size, input_size)
             # displaying.draw_cognitive_maps(
             #     [
             #         best_fit.weights,
@@ -37,41 +40,66 @@ def compare_solutions(train_models, test_models, test_xs, test_ys, input_size, e
             # print(f"{best_fit.get_class()} should be {test_model.get_class()}")
             # print(f"{best_fit} won")
             mistakes += 1
-    print(f"nn_weights accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
+    acc = 1-mistakes/len(test_models)
+    print(f"nn_weights accuracy: {len(test_models)-mistakes}/{len(test_models)} ({acc})")
+
 
     if extend_size > 0:
         mistakes = 0
-        for test_model, input_data_index in test_models:
-            train_models_without_same = [m for m, _ in train_models if (m.weights != test_model.weights).any()]
-            best_fit = comparing.nn_weights_and_start_values(train_models_without_same, test_model, input_size, extend_size)
+        for test_model in test_models:
+            train_models_without_same = [m for m in train_models if (m.weights != test_model.weights).any()]
+            best_fit = basicComparing.nn_weights_and_start_values(train_models_without_same, test_model, input_size, extend_size)
             if best_fit.get_class() != test_model.get_class():
                 mistakes += 1
         print(f"nn_weights_and_start_values accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
 
     # mistakes = 0
     # for test_model, xs in tqdm(zip(test_models, test_xs)):
-    #     best_fit = comparing.best_prediction(train_models, xs)
+    #     best_fit = basicComparing.best_prediction(train_models, xs)
     #     if best_fit.get_class() != test_model.get_class():
     #         mistakes += 1
     # print(f"best_prediction accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
     if test_xs:
         mistakes = 0
-        for test_model, input_data_index in test_models:
-            train_models_without_same = [m for m, _ in train_models if (m.weights != test_model.weights).any()]
-            best_fit = comparing.nn_convergence(train_models_without_same, test_model, test_xs[input_data_index][0])
+        for test_model, xs in zip(test_models, test_xs):
+            train_models_without_same = [m for m in train_models if (m.weights != test_model.weights).any()]
+            best_fit = basicComparing.nn_convergence(train_models_without_same, test_model, xs[0])
             if best_fit.get_class() != test_model.get_class():
                 mistakes += 1
         print(f"nn_convergence accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
 
-
-
     mistakes = 0
-    for test_model, input_data_index in test_models:
-        train_models_without_same = [m for m, _ in train_models if (m.weights != test_model.weights).any()]
-        fit_class, _ = comparing.best_mse_sum(train_models_without_same, test_model, no_classes)
+    for test_model in test_models:
+        train_models_without_same = [m for m in train_models if (m.weights != test_model.weights).any()]
+        fit_class, _ = basicComparing.best_mse_sum(train_models_without_same, test_model, no_classes)
         if fit_class != test_model.get_class():
             mistakes += 1
     print(f"best_mse_sum accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
+
+    mistakes = 0
+    cfr = rfClassifier.RFClassifier(
+        [tm.weights for tm in train_models],
+        [tm.class_name for tm in train_models]
+        )
+    for test_model in test_models:
+        fit_class = cfr.predict(test_model.weights)
+        if fit_class != test_model.get_class():
+            mistakes += 1
+    print(f"rfClassifier accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
+    rf_accuracy = 1-mistakes/len(test_models)
+
+    mistakes = 0
+    cfr = svmClassifier.SVMClassifier(
+        [tm.weights for tm in train_models],
+        [tm.class_name for tm in train_models]
+        )
+    for test_model in test_models:
+        fit_class = cfr.predict(test_model.weights)
+        if fit_class != test_model.get_class():
+            mistakes += 1
+    print(f"SVMClassifier accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
+    return rf_accuracy
+
 
 
 def generate_ecm_checkpoints():
@@ -113,7 +141,6 @@ def generate_fcm_checkpoints():
 
 
 def generate_fcm_cmeans_checkpoints(learning_rate, derivative_order, no_centers, steps):
-    input_size = 6
     input_path = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
     output_path = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{learning_rate}_{derivative_order}/train/')
     # os.mkdir(output_path)
@@ -148,22 +175,66 @@ def generate_fcm_cmeans_checkpoints(learning_rate, derivative_order, no_centers,
         input_size=no_centers,
         cmeans_centers=centers)
 
+def generate_ecm_cmeans_checkpoints(learning_rate, derivative_order, no_centers, steps, extended_size):
+    input_path = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
+    output_path = pathlib.Path(f'./checkpoints/Cricket/ecm_cmeans/{no_centers}_{learning_rate}_{derivative_order}_{extended_size}/train/')
+    # os.mkdir(output_path)
+    os.mkdir(output_path)
+    xses_series, ys = loadArff.load_cricket_normalized(input_path)
+    if derivative_order > 0:
+        xses_series = derivatives.transform(xses_series, derivative_order)
+    centers, xses_series = cmeans.find_centers_and_transform(xses_series, c=no_centers)
+
+    ecmCheckpoints.create_checkpoints(
+        xses_series,
+        ys,
+        output_path,
+        learning_rate,
+        steps,
+        input_size=no_centers,
+        extended_size=extended_size,
+        cmeans_centers=centers)
+
+    input_path = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
+    output_path = pathlib.Path(f'./checkpoints/Cricket/ecm_cmeans/{no_centers}_{learning_rate}_{derivative_order}_{extended_size}/test/')
+    # os.mkdir(output_path)
+    os.mkdir(output_path)
+    xses_series, ys = loadArff.load_cricket_normalized(input_path)
+    if derivative_order > 0:
+        xses_series = derivatives.transform(xses_series, derivative_order)
+    xses_series = cmeans.transform(xses_series, centers=centers)
+    ecmCheckpoints.create_checkpoints(
+        xses_series,
+        ys,
+        output_path,
+        learning_rate,
+        steps,
+        input_size=no_centers,
+        extended_size=extended_size,
+        cmeans_centers=centers)
+
 
 if __name__ == "__main__":
 
-    for no_centers in range(2,10):
-        for derivative_order in [0,1,2]:
+    # for no_centers in range(7,10):
+    #     for derivative_order in [0,1,2]:
+    #         for extended_size in [2, no_centers//2, no_centers]:
+    #             os.mkdir(pathlib.Path(f'./checkpoints/Cricket/ecm_cmeans/{no_centers}_{0.002}_{derivative_order}_{extended_size}/'))
+
+    for no_centers in range(10,50):
+        for derivative_order in [0]:
             os.mkdir(pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/'))
 
-    # for no_centers in range(2,10):
-    #     for derivative_order in [0,1,2]:
-    #         print(f"Learning no_centers {no_centers}, derivative_order {derivative_order}")
-    #         generate_fcm_cmeans_checkpoints(
-    #             no_centers=no_centers,
-    #             derivative_order=derivative_order,
-    #             steps=200,
-    #             learning_rate=0.002
-    #         )
+
+    for no_centers in range(10,50):
+        for derivative_order in [0]:
+            print(f"Learning no_centers {no_centers}, derivative_order {derivative_order}")
+            generate_fcm_cmeans_checkpoints(
+                no_centers=no_centers,
+                derivative_order=derivative_order,
+                steps=200,
+                learning_rate=0.002
+            )
 
     # # solution comparison for ecms
     # checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/train')
@@ -258,3 +329,47 @@ if __name__ == "__main__":
     #     test_models.append((mppicm, input_data_index))
     #     input_data_index+=1
     # compare_solutions(test_models, test_models, test_xses_series, test_ys, 6, 0, 12)
+
+    # # solution comparison for many derivative cmeans fcms
+    # input_file = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
+    # xses_series, ys = loadArff.load_cricket_normalized(input_file)
+    # xses_series_derived = [derivatives.transform(xses_series, order) for order in [0,1,2]]
+    # plot_xs, plot_ys = [], []
+    # for no_centers in range(2,10):
+    #     for derivative_order in [0]:
+    #         checkpoints_train_dir = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/train')
+    #         checkpoints_test_dir = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/test')
+
+    #         train_training_paths = fcmCheckpoints.load_checkpoints(checkpoints_train_dir)
+    #         test_training_paths = fcmCheckpoints.load_checkpoints(checkpoints_test_dir)
+
+    #         xses_series_transformed = xses_series_derived[derivative_order]
+    #         xses_series_transformed = cmeans.transform(
+    #             xses_series=xses_series_transformed,
+    #             centers=test_training_paths[0].cmeans_centers)
+
+    #         xses_series_transformed = [xses_series_transformed[tp.input_data_index] for tp in test_training_paths]
+
+    #         train_models = [tp.points[-1] for tp in train_training_paths]
+    #         test_models = [tp.points[-1] for tp in test_training_paths]
+
+    #         print(f'no_centers {no_centers}, derivative_order {derivative_order}')
+    #         rf_accuracy = compare_solutions(
+    #             train_models=train_models,
+    #             test_models=test_models,
+    #             test_xs=xses_series_transformed,
+    #             test_ys=None,
+    #             input_size=no_centers,
+    #             extend_size=0,
+    #             no_classes=12)
+    #         err = sum([tp.points[-1].get_error(xs) for tp, xs in zip(train_training_paths, xses_series_transformed)])
+    #         print(f'Prediction error: {err / no_centers}')
+    #         plot_xs.append(err / no_centers)
+    #         plot_ys.append(rf_accuracy)
+
+    # fig, ax = plt.subplots()
+    # ax.plot(plot_xs, plot_ys, 'bo')
+    # ax.set(xlabel='sum of mean fcm prediction errors', ylabel='classification accuracy (rf)',
+    #    title='c from 2 to 9, no derivatives')
+    # ax.grid()
+    # plt.show()

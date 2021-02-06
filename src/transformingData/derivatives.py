@@ -1,8 +1,11 @@
+import copy
+
+
 def transform(xses_series, max_order):
     transformed_xses_series = []
     input_size = len(xses_series[0][0])
     for xs in xses_series:
-        transformed_xs = xs
+        transformed_xs = copy.deepcopy(xs)
         derivatives = xs
         for order in range(1, max_order+1):
             derivatives = [[

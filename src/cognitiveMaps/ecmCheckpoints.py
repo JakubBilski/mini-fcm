@@ -57,9 +57,8 @@ class ECMTrainingPath:
         return training_path
 
 
-def create_checkpoints(input_path, output_path, learning_rate, steps,
+def create_checkpoints(xses_series, ys, output_path, learning_rate, steps,
                        input_size, extended_size, cmeans_centers=None):
-    xses_series, ys = loadArff.load_cricket_normalized(input_path)
     config = (learning_rate, steps, input_size, extended_size, cmeans_centers)
     configs = [(config, i) for i in range(len(ys))]
 

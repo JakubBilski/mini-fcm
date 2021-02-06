@@ -27,9 +27,10 @@ def transform(xses_series, centers):
     for xs in xses_series:
         squashed_xses.extend(xs)
     squashed_xses = np.asarray(squashed_xses).transpose()
+    centers=np.asarray(centers)
     result = cmeans_predict(
         test_data=squashed_xses,
-        cntr_trained=np.asarray(centers),
+        cntr_trained=centers,
         m=2.0,
         error=0.001,
         maxiter=1000

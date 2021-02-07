@@ -58,8 +58,8 @@ class ECMTrainingPath:
 
 
 def create_checkpoints(xses_series, ys, output_path, learning_rate, steps,
-                       input_size, extended_size, cmeans_centers=None):
-    config = (learning_rate, steps, input_size, extended_size, cmeans_centers)
+                       input_size, extended_size, save_step=1, cmeans_centers=None):
+    config = (learning_rate, steps, input_size, extended_size, cmeans_centers, save_step)
     configs = [(config, i) for i in range(len(ys))]
 
     if USE_MULTIPROCESSING:
@@ -90,14 +90,15 @@ def create_checkpoints(xses_series, ys, output_path, learning_rate, steps,
 def _create_training_path(args):
     xs, y, config = args
     config, i = config
-    learning_rate, steps, input_size, extended_size, cmeans_centers = config
+    learning_rate, steps, input_size, extended_size, cmeans_centers, save_step = config
     training_path = ECMTrainingPath(learning_rate, y, i, cmeans_centers)
     ecm = ExtendedCognitiveMap(input_size, input_size+extended_size)
     ecm.set_class(y)
     training_path.points.append(copy.deepcopy(ecm))
     for step in range(steps):
         ecm.train_step(xs, learning_rate)
-        training_path.points.append(copy.deepcopy(ecm))
+        if step % save_step == 0 or step == steps-1:
+            training_path.points.append(copy.deepcopy(ecm))
     return training_path
 
 

@@ -55,8 +55,8 @@ class FCMTrainingPath:
 
 
 def create_checkpoints(xses_series, ys, output_path, learning_rate,
-                       steps, input_size, cmeans_centers=None):
-    config = (learning_rate, steps, input_size, cmeans_centers)
+                       steps, input_size, save_step=1, cmeans_centers=None):
+    config = (learning_rate, steps, input_size, cmeans_centers, save_step)
     configs = [(config, i) for i in range(len(ys))]
 
     if USE_MULTIPROCESSING:
@@ -87,7 +87,7 @@ def create_checkpoints(xses_series, ys, output_path, learning_rate,
 def _create_training_path(args):
     xs, y, config = args
     config, i = config
-    learning_rate, steps, input_size, cmeans_centers = config
+    learning_rate, steps, input_size, cmeans_centers, save_step = config
     training_path = FCMTrainingPath(
         learning_rate,
         y,
@@ -99,7 +99,8 @@ def _create_training_path(args):
     training_path.points.append(copy.deepcopy(fcm))
     for step in range(steps):
         fcm.train_step(xs, learning_rate)
-        training_path.points.append(copy.deepcopy(fcm))
+        if step % save_step == 0 or step == steps-1:
+            training_path.points.append(copy.deepcopy(fcm))
     return training_path
 
 

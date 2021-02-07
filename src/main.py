@@ -140,7 +140,7 @@ def generate_fcm_checkpoints():
         input_size)
 
 
-def generate_fcm_cmeans_checkpoints(learning_rate, derivative_order, no_centers, steps):
+def generate_fcm_cmeans_checkpoints(learning_rate, derivative_order, no_centers, steps, save_step=1):
     input_path = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
     output_path = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{learning_rate}_{derivative_order}/train/')
     # os.mkdir(output_path)
@@ -157,6 +157,7 @@ def generate_fcm_cmeans_checkpoints(learning_rate, derivative_order, no_centers,
         learning_rate,
         steps,
         input_size=no_centers,
+        save_step=save_step,
         cmeans_centers=centers)
     input_path = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
     output_path = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{learning_rate}_{derivative_order}/test/')
@@ -173,9 +174,10 @@ def generate_fcm_cmeans_checkpoints(learning_rate, derivative_order, no_centers,
         learning_rate,
         steps,
         input_size=no_centers,
+        save_step=save_step,
         cmeans_centers=centers)
 
-def generate_ecm_cmeans_checkpoints(learning_rate, derivative_order, no_centers, steps, extended_size):
+def generate_ecm_cmeans_checkpoints(learning_rate, derivative_order, no_centers, steps, extended_size, save_step=1):
     input_path = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
     output_path = pathlib.Path(f'./checkpoints/Cricket/ecm_cmeans/{no_centers}_{learning_rate}_{derivative_order}_{extended_size}/train/')
     # os.mkdir(output_path)
@@ -193,6 +195,7 @@ def generate_ecm_cmeans_checkpoints(learning_rate, derivative_order, no_centers,
         steps,
         input_size=no_centers,
         extended_size=extended_size,
+        save_step=save_step,
         cmeans_centers=centers)
 
     input_path = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
@@ -211,6 +214,7 @@ def generate_ecm_cmeans_checkpoints(learning_rate, derivative_order, no_centers,
         steps,
         input_size=no_centers,
         extended_size=extended_size,
+        save_step=save_step,
         cmeans_centers=centers)
 
 
@@ -221,20 +225,20 @@ if __name__ == "__main__":
     #         for extended_size in [2, no_centers//2, no_centers]:
     #             os.mkdir(pathlib.Path(f'./checkpoints/Cricket/ecm_cmeans/{no_centers}_{0.002}_{derivative_order}_{extended_size}/'))
 
-    for no_centers in range(2,50):
-        for derivative_order in [0]:
-            os.mkdir(pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/'))
+    # for no_centers in range(2,50):
+    #     for derivative_order in [0]:
+    #         os.mkdir(pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/'))
 
 
-    for no_centers in range(2,50):
-        for derivative_order in [0]:
-            print(f"Learning no_centers {no_centers}, derivative_order {derivative_order}")
-            generate_fcm_cmeans_checkpoints(
-                no_centers=no_centers,
-                derivative_order=derivative_order,
-                steps=200,
-                learning_rate=0.002
-            )
+    # for no_centers in range(2,50):
+    #     for derivative_order in [0]:
+    #         print(f"Learning no_centers {no_centers}, derivative_order {derivative_order}")
+    #         generate_fcm_cmeans_checkpoints(
+    #             no_centers=no_centers,
+    #             derivative_order=derivative_order,
+    #             steps=200,
+    #             learning_rate=0.002
+    #         )
 
 
     # print(f"Learning no_centers {4}, derivative_order {0}")
@@ -242,7 +246,8 @@ if __name__ == "__main__":
     #     no_centers=4,
     #     derivative_order=0,
     #     steps=10,
-    #     learning_rate=0.002
+    #     learning_rate=0.002,
+    #     save_step=10
     # )
 
     # # solution comparison for ecms
@@ -339,42 +344,42 @@ if __name__ == "__main__":
     #     input_data_index+=1
     # compare_solutions(test_models, test_models, test_xses_series, test_ys, 6, 0, 12)
 
-    # # solution comparison for many derivative cmeans fcms
-    # input_file = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
-    # xses_series, ys = loadArff.load_cricket_normalized(input_file)
-    # xses_series_derived = [derivatives.transform(xses_series, order) for order in [0,1,2]]
-    # plot_xs, plot_ys = [], []
-    # for no_centers in range(2,10):
-    #     for derivative_order in [0]:
-    #         checkpoints_train_dir = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/train')
-    #         checkpoints_test_dir = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/test')
+    # solution comparison for many derivative cmeans fcms
+    input_file = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
+    xses_series, ys = loadArff.load_cricket_normalized(input_file)
+    xses_series_derived = [derivatives.transform(xses_series, order) for order in [0,1,2]]
+    plot_xs, plot_ys = [], []
+    for no_centers in [9, 18, 27, 34]:
+        for derivative_order in [0]:
+            checkpoints_train_dir = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/train')
+            checkpoints_test_dir = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/test')
 
-    #         train_training_paths = fcmCheckpoints.load_checkpoints(checkpoints_train_dir)
-    #         test_training_paths = fcmCheckpoints.load_checkpoints(checkpoints_test_dir)
+            train_training_paths = fcmCheckpoints.load_checkpoints(checkpoints_train_dir)
+            test_training_paths = fcmCheckpoints.load_checkpoints(checkpoints_test_dir)
 
-    #         xses_series_transformed = xses_series_derived[derivative_order]
-    #         xses_series_transformed = cmeans.transform(
-    #             xses_series=xses_series_transformed,
-    #             centers=test_training_paths[0].cmeans_centers)
+            xses_series_transformed = xses_series_derived[derivative_order]
+            xses_series_transformed = cmeans.transform(
+                xses_series=xses_series_transformed,
+                centers=test_training_paths[0].cmeans_centers)
 
-    #         xses_series_transformed = [xses_series_transformed[tp.input_data_index] for tp in test_training_paths]
+            xses_series_transformed = [xses_series_transformed[tp.input_data_index] for tp in test_training_paths]
 
-    #         train_models = [tp.points[-1] for tp in train_training_paths]
-    #         test_models = [tp.points[-1] for tp in test_training_paths]
+            train_models = [tp.points[-1] for tp in train_training_paths]
+            test_models = [tp.points[-1] for tp in test_training_paths]
 
-    #         print(f'no_centers {no_centers}, derivative_order {derivative_order}')
-    #         rf_accuracy = compare_solutions(
-    #             train_models=train_models,
-    #             test_models=test_models,
-    #             test_xs=xses_series_transformed,
-    #             test_ys=None,
-    #             input_size=no_centers,
-    #             extend_size=0,
-    #             no_classes=12)
-    #         err = sum([tp.points[-1].get_error(xs) for tp, xs in zip(train_training_paths, xses_series_transformed)])
-    #         print(f'Prediction error: {err / no_centers}')
-    #         plot_xs.append(err / no_centers)
-    #         plot_ys.append(rf_accuracy)
+            print(f'no_centers {no_centers}, derivative_order {derivative_order}')
+            rf_accuracy = compare_solutions(
+                train_models=train_models,
+                test_models=test_models,
+                test_xs=xses_series_transformed,
+                test_ys=None,
+                input_size=no_centers,
+                extend_size=0,
+                no_classes=12)
+            err = sum([tp.points[-1].get_error(xs) for tp, xs in zip(train_training_paths, xses_series_transformed)])
+            print(f'Prediction error: {err / no_centers}')
+            plot_xs.append(err / no_centers)
+            plot_ys.append(rf_accuracy)
 
     # fig, ax = plt.subplots()
     # ax.plot(plot_xs, plot_ys, 'bo')

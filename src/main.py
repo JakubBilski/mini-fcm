@@ -349,7 +349,9 @@ if __name__ == "__main__":
     xses_series, ys = loadArff.load_cricket_normalized(input_file)
     xses_series_derived = [derivatives.transform(xses_series, order) for order in [0,1,2]]
     plot_xs, plot_ys = [], []
-    for no_centers in [9, 18, 27, 34]:
+    plot2_xs, plot2_ys = [], []
+    plot3_xs, plot3_ys = [], []
+    for no_centers in range(2, 38):
         for derivative_order in [0]:
             checkpoints_train_dir = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/train')
             checkpoints_test_dir = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/test')
@@ -380,10 +382,28 @@ if __name__ == "__main__":
             print(f'Prediction error: {err / no_centers}')
             plot_xs.append(err / no_centers)
             plot_ys.append(rf_accuracy)
+            plot2_xs.append(no_centers)
+            plot2_ys.append(err / no_centers)
+            plot3_xs.append(no_centers)
+            plot3_ys.append(rf_accuracy)
 
-    # fig, ax = plt.subplots()
-    # ax.plot(plot_xs, plot_ys, 'bo')
-    # ax.set(xlabel='sum of mean fcm prediction errors', ylabel='classification accuracy (rf)',
-    #    title='c from 2 to 9, no derivatives')
-    # ax.grid()
-    # plt.show()
+    fig, ax = plt.subplots()
+    ax.plot(plot_xs, plot_ys, 'bo')
+    ax.set(xlabel='sum of mean fcm prediction errors', ylabel='classification accuracy (rf)',
+       title='c (2-9, 18, 27, 34), no derivatives')
+    ax.grid()
+
+    fig, ax = plt.subplots()
+    ax.plot(plot2_xs, plot2_ys, 'bo')
+    ax.set(xlabel='number of cmeans centers', ylabel='prediction error',
+       title='no derivatives')
+    ax.grid()
+
+    fig, ax = plt.subplots()
+    ax.plot(plot3_xs, plot3_ys, 'bo')
+    ax.set(xlabel='number of cmeans centers', ylabel='classification accuracy (rf)',
+       title='no derivatives')
+    ax.grid()
+
+
+    plt.show()

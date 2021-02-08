@@ -289,23 +289,72 @@ if __name__ == "__main__":
     #         xses_series = cmeans.transform(xses_series, train_path.k, train_path.cmeans_centers)
     #     print([train_path.points[step].get_error(xses_series[train_path.input_data_index])
     #         for step in range(len(train_path.points))])
-
     
-    # # examine error of fcms
-    # # derivative_order = 0
-    # checkpoints_train_dir = pathlib.Path('./checkpoints/Cricket/fcm_cmeans/4_0.002_0/train')
-    # input_file = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
-    # xses_series, ys = loadArff.load_cricket_normalized(input_file)
-    # train_paths = fcmCheckpoints.load_checkpoints(checkpoints_train_dir)
-    # # xses_series = derivatives.transform(xses_series, derivative_order)
-    # if train_paths[0].cmeans_centers is not None:
-    #     xses_series = cmeans.transform(xses_series, train_paths[0].cmeans_centers)
-    # for train_path in train_paths:
-    #     print(f"New train path (class {train_path.class_name})")
-    #     if train_path.class_name != ys[train_path.input_data_index]:
-    #         print("Mismatch!")
-    #     xs = xses_series[train_path.input_data_index]
-    #     print([train_path.points[step].get_error(xs) for step in range(len(train_path.points))])
+    
+    # examine error of fcms
+    input_file = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
+    xses_series, ys = loadArff.load_cricket_normalized(input_file)
+    xses_series_derived = [derivatives.transform(xses_series, order) for order in [0,1,2]]
+
+    for derivative_order in [0]:
+        for no_centers in [3, 4, 7, 10, 15, 20, 25, 30, 35]:
+            checkpoints_train_dir = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/train')
+            checkpoints_test_dir = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/test')
+
+            train_training_paths = fcmCheckpoints.load_checkpoints(checkpoints_train_dir)
+            test_training_paths = fcmCheckpoints.load_checkpoints(checkpoints_test_dir)
+            
+            steps = len(train_training_paths[0].points)
+
+            plot_xs = [i for i in range(0, steps)]
+            plot_ys = [[] for x in plot_xs]
+
+            xses_series_transformed = xses_series_derived[derivative_order]
+            if train_training_paths[0].cmeans_centers is not None:
+                xses_series_transformed = cmeans.transform(xses_series_transformed, train_training_paths[0].cmeans_centers)
+
+            print("Calculating prediction error")
+            for train_path in tqdm(train_training_paths):
+                xs = xses_series_transformed[train_path.input_data_index]
+                for step in range(len(train_path.points)):
+                    err = train_path.points[step].get_error(xs)
+                    plot_ys[step].append(err)
+
+            plot_ys_mean = [np.mean(plot_ys[step]) for step in range(steps)]
+            plot_ys_sd = [np.std(plot_ys[step]) for step in range(steps)]
+
+            color = 'tab:blue'
+            fig, ax = plt.subplots()
+            ax.errorbar(plot_xs, plot_ys_mean, plot_ys_sd, color=color)
+            ax.set(xlabel='step (lr 0.002)', ylabel='mean prediction error',
+                   title=f'Cricket, c={no_centers}, derivative {derivative_order}')
+            ax.tick_params(axis='y', labelcolor=color)
+            ax.grid()
+
+            plot_ys2 = [0 for x in plot_xs]
+
+            print("Calculating classification error")
+            for step in tqdm(range(steps)):
+                train_models = [tp.points[step] for tp in train_training_paths]
+                test_models = [tp.points[step] for tp in test_training_paths]
+                rf_accuracy = compare_solutions(
+                    train_models=train_models,
+                    test_models=test_models,
+                    test_xs=xses_series_transformed,
+                    test_ys=None,
+                    input_size=no_centers,
+                    extend_size=0,
+                    no_classes=12)
+                plot_ys2[step] = rf_accuracy
+
+            color = 'tab:red'
+            ax2 = ax.twinx()
+            ax2.set_ylabel('classification accuracy (rf)')
+            ax2.plot(plot_xs, plot_ys2, color=color)
+            ax2.tick_params(axis='y', labelcolor=color)
+            plt.savefig(pathlib.Path(f'./plots/Cricket/pred_vs_class_by_step_{no_centers}_{0.002}_{derivative_order}.png'))
+            plt.close()
+
 
     # # solution comparison for fcms
     # checkpoints_train_dir = pathlib.Path('./checkpoints/Cricket/fcm_cmeans/6_0.002_2/train')
@@ -345,65 +394,65 @@ if __name__ == "__main__":
     # compare_solutions(test_models, test_models, test_xses_series, test_ys, 6, 0, 12)
 
     # solution comparison for many derivative cmeans fcms
-    input_file = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
-    xses_series, ys = loadArff.load_cricket_normalized(input_file)
-    xses_series_derived = [derivatives.transform(xses_series, order) for order in [0,1,2]]
-    plot_xs, plot_ys = [], []
-    plot2_xs, plot2_ys = [], []
-    plot3_xs, plot3_ys = [], []
-    for no_centers in range(2, 38):
-        for derivative_order in [0]:
-            checkpoints_train_dir = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/train')
-            checkpoints_test_dir = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/test')
+    # input_file = pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TEST.arff')
+    # xses_series, ys = loadArff.load_cricket_normalized(input_file)
+    # xses_series_derived = [derivatives.transform(xses_series, order) for order in [0,1,2]]
+    # plot_xs, plot_ys = [], []
+    # plot2_xs, plot2_ys = [], []
+    # plot3_xs, plot3_ys = [], []
+    # for no_centers in range(2, 38):
+    #     for derivative_order in [0]:
+    #         checkpoints_train_dir = pathlib.Path(f'./checkpoints/UWaveGestureLibrary/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/train')
+    #         checkpoints_test_dir = pathlib.Path(f'./checkpoints/UWaveGestureLibrary/fcm_cmeans/{no_centers}_{0.002}_{derivative_order}/test')
 
-            train_training_paths = fcmCheckpoints.load_checkpoints(checkpoints_train_dir)
-            test_training_paths = fcmCheckpoints.load_checkpoints(checkpoints_test_dir)
+    #         train_training_paths = fcmCheckpoints.load_checkpoints(checkpoints_train_dir)
+    #         test_training_paths = fcmCheckpoints.load_checkpoints(checkpoints_test_dir)
 
-            xses_series_transformed = xses_series_derived[derivative_order]
-            xses_series_transformed = cmeans.transform(
-                xses_series=xses_series_transformed,
-                centers=test_training_paths[0].cmeans_centers)
+    #         xses_series_transformed = xses_series_derived[derivative_order]
+    #         xses_series_transformed = cmeans.transform(
+    #             xses_series=xses_series_transformed,
+    #             centers=test_training_paths[0].cmeans_centers)
 
-            xses_series_transformed = [xses_series_transformed[tp.input_data_index] for tp in test_training_paths]
+    #         xses_series_transformed = [xses_series_transformed[tp.input_data_index] for tp in test_training_paths]
 
-            train_models = [tp.points[-1] for tp in train_training_paths]
-            test_models = [tp.points[-1] for tp in test_training_paths]
+    #         train_models = [tp.points[-1] for tp in train_training_paths]
+    #         test_models = [tp.points[-1] for tp in test_training_paths]
 
-            print(f'no_centers {no_centers}, derivative_order {derivative_order}')
-            rf_accuracy = compare_solutions(
-                train_models=train_models,
-                test_models=test_models,
-                test_xs=xses_series_transformed,
-                test_ys=None,
-                input_size=no_centers,
-                extend_size=0,
-                no_classes=12)
-            err = sum([tp.points[-1].get_error(xs) for tp, xs in zip(train_training_paths, xses_series_transformed)])
-            print(f'Prediction error: {err / no_centers}')
-            plot_xs.append(err / no_centers)
-            plot_ys.append(rf_accuracy)
-            plot2_xs.append(no_centers)
-            plot2_ys.append(err / no_centers)
-            plot3_xs.append(no_centers)
-            plot3_ys.append(rf_accuracy)
+    #         print(f'no_centers {no_centers}, derivative_order {derivative_order}')
+    #         rf_accuracy = compare_solutions(
+    #             train_models=train_models,
+    #             test_models=test_models,
+    #             test_xs=xses_series_transformed,
+    #             test_ys=None,
+    #             input_size=no_centers,
+    #             extend_size=0,
+    #             no_classes=12)
+    #         err = sum([tp.points[-1].get_error(xs) for tp, xs in zip(train_training_paths, xses_series_transformed)])
+    #         print(f'Prediction error: {err / no_centers}')
+    #         plot_xs.append(err / no_centers)
+    #         plot_ys.append(rf_accuracy)
+    #         plot2_xs.append(no_centers)
+    #         plot2_ys.append(err / no_centers)
+    #         plot3_xs.append(no_centers)
+    #         plot3_ys.append(rf_accuracy)
 
-    fig, ax = plt.subplots()
-    ax.plot(plot_xs, plot_ys, 'bo')
-    ax.set(xlabel='sum of mean fcm prediction errors', ylabel='classification accuracy (rf)',
-       title='c (2-9, 18, 27, 34), no derivatives')
-    ax.grid()
+    # fig, ax = plt.subplots()
+    # ax.plot(plot_xs, plot_ys, 'bo')
+    # ax.set(xlabel='sum of mean fcm prediction errors', ylabel='classification accuracy (rf)',
+    #    title='UWaveGestureLibrary, no derivatives')
+    # ax.grid()
 
-    fig, ax = plt.subplots()
-    ax.plot(plot2_xs, plot2_ys, 'bo')
-    ax.set(xlabel='number of cmeans centers', ylabel='prediction error',
-       title='no derivatives')
-    ax.grid()
+    # fig, ax = plt.subplots()
+    # ax.plot(plot2_xs, plot2_ys, 'bo')
+    # ax.set(xlabel='number of cmeans centers', ylabel='prediction error',
+    #    title='no derivatives')
+    # ax.grid()
 
-    fig, ax = plt.subplots()
-    ax.plot(plot3_xs, plot3_ys, 'bo')
-    ax.set(xlabel='number of cmeans centers', ylabel='classification accuracy (rf)',
-       title='no derivatives')
-    ax.grid()
+    # fig, ax = plt.subplots()
+    # ax.plot(plot3_xs, plot3_ys, 'bo')
+    # ax.set(xlabel='number of cmeans centers', ylabel='classification accuracy (rf)',
+    #    title='UWaveGestureLibrary, no derivatives')
+    # ax.grid()
 
 
     plt.show()

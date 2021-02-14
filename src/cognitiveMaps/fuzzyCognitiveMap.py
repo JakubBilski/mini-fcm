@@ -38,4 +38,4 @@ class FuzzyCognitiveMap(BaseCognitiveMap):
             result = FuzzyCognitiveMap.f(self.weights.dot(input_in_time[i]))
             result -= expected_output[i]
             error += result.dot(np.transpose(result))
-        return error/len(input_in_time)
+        return error/(len(input_in_time)*self.n)

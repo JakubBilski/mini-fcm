@@ -15,6 +15,9 @@ maps = [
 
 
 def weights_distance(weights_a, weights_b, n, k):
+    if n == k:
+        return weights_distance_old(weights_a, weights_b)
+
     best_result = 10000
     for map in maps:
         result = 0
@@ -43,7 +46,7 @@ def weights_distance_old(weights_a, weights_b):
 
 
 def nn_weights(models, m, n, k):
-    best_cost = 1000
+    best_cost = 100000
     best_model = None
     for model in models:
         cost = weights_distance(model.weights, m.weights, n, k)
@@ -107,13 +110,14 @@ def get_grouping_factor(models, input_size, extend_size, no_clusters):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         vects = [model.weights.flatten().tolist() for model in models]
-        for i in range(len(models)):
-            vects[i] = np.append(vects[i],
-                                 consts.E(
-                    input_size+extend_size,
-                    input_size
-                    ).dot(models[i].start_values).flatten().tolist()
-                )
+        if extend_size > 0:
+            for i in range(len(models)):
+                vects[i] = np.append(vects[i],
+                                    consts.E(
+                        input_size+extend_size,
+                        input_size
+                        ).dot(models[i].start_values).flatten().tolist()
+                    )
 
         centers = np.zeros(shape=(no_clusters, len(vects[0])))
         no_center_members = np.zeros(shape=(no_clusters))

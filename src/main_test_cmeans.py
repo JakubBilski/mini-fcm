@@ -12,6 +12,9 @@ from cognitiveMaps import svmClassifier
 from cognitiveMaps.mppiCognitiveMap import MppiCognitiveMap
 from transformingData import cmeans
 from transformingData import derivatives
+from transformingData import trajectory_slicing_linear
+from transformingData import trajectory_slicing_sigmoid
+from transformingData import trajectory_slicing_opposite
 from loadingData import loadArff
 from datetime import datetime
 
@@ -63,7 +66,7 @@ def compare_solutions(train_models, test_models, test_xs, input_size, no_classes
         fit_class = cfr.predict(test_model.weights)
         if fit_class != test_model.get_class():
             mistakes += 1
-    print(f"rfClassifier accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
+    # print(f"rfClassifier accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
     rf_accuracy = 1-mistakes/len(test_models)
 
     if not TEST_ONLY_RF:
@@ -76,7 +79,7 @@ def compare_solutions(train_models, test_models, test_xs, input_size, no_classes
             fit_class = cfr.predict(test_model.weights)
             if fit_class != test_model.get_class():
                 mistakes += 1
-        print(f"SVMClassifier accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
+        # print(f"SVMClassifier accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
     return rf_accuracy
 
 
@@ -117,16 +120,39 @@ def generate_mppi_checkpoints(derivative_order, no_centers):
 def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys, no_classes, input_size, plot_title):
     np.random.seed = 0
 
-    no_random_centers = 25
+    no_random_centers = 40
 
-    for no_centers in range(3, 20):
+    for no_centers in range(3, 8):
         random_centerss = [[np.random.rand(input_size) for _1 in range(no_centers)] for _ in range(no_random_centers)]
+        print(f"no_centers {no_centers}")
+        print("Calculating different cmeans centers")
         random_centerss.append(cmeans.find_centers_and_transform(
             xses_series=train_xses_series,
             c=no_centers)[0])
+        sliced_train_xses_series = trajectory_slicing_linear.transform(train_xses_series)
+        random_centerss.append(cmeans.find_centers_in_first_and_transform_second(
+            first_series=sliced_train_xses_series,
+            second_series=train_xses_series,
+            c=no_centers)[0])
+        sliced_sigmoid_train_xses_series = trajectory_slicing_sigmoid.transform(train_xses_series)
+        random_centerss.append(cmeans.find_centers_in_first_and_transform_second(
+            first_series=sliced_sigmoid_train_xses_series,
+            second_series=train_xses_series,
+            c=no_centers)[0])
+        sliced_sigmoid_train_xses_series = trajectory_slicing_opposite.transform(train_xses_series)
+        random_centerss.append(cmeans.find_centers_in_first_and_transform_second(
+            first_series=sliced_sigmoid_train_xses_series,
+            second_series=train_xses_series,
+            c=no_centers)[0])
+
         plot_xs, plot_ys = [], []
-        for step in tqdm(range(no_random_centers+1)):
+        plot2_xs, plot2_ys = [], []
+        plot3_xs, plot3_ys = [], []
+
+        print("Performing classification")
+        for step in tqdm(range(no_random_centers+4)):
             random_centers = random_centerss[step]
+
             train_xses_series_transformed = cmeans.transform(
                 xses_series=train_xses_series,
                 centers=random_centers)
@@ -159,20 +185,55 @@ def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys
                 no_classes=no_classes)
 
             err = sum([mppi.get_error(xs) for mppi, xs in zip(train_models, test_xses_series_transformed)])/len(train_models)
-            print(f'Prediction error: {err}')
+            # print(f'Prediction error: {err}')
+            volatility = basicComparing.get_volatility_taxicab(xs)
+
             plot_xs.append(err)
             plot_ys.append(rf_accuracy)
 
+            plot2_xs.append(volatility / err)
+            plot2_ys.append(rf_accuracy)
+            
+            plot3_xs.append(volatility)
+            plot3_ys.append(err)
+
+
         fig, ax = plt.subplots()
-        ax.plot(plot_xs[:-1], plot_ys[:-1], 'bo')
+        ax.plot(plot_xs[:-4], plot_ys[:-4], 'bo')
         ax.set(xlabel='prediction error', ylabel='classification accuracy (rf)',
         title=f'{plot_title}, no_centers {no_centers}')
         ax.grid()
-
-        plt.scatter(plot_xs[no_random_centers], plot_ys[no_random_centers], color='red')
-        plt.savefig(plots_dir / f'{plot_title} no_centers {no_centers}.png')
+        ax.scatter(plot_xs[no_random_centers], plot_ys[no_random_centers], color='red')
+        ax.scatter(plot_xs[no_random_centers+1], plot_ys[no_random_centers+1], color='green')
+        ax.scatter(plot_xs[no_random_centers+2], plot_ys[no_random_centers+2], color='orange')
+        ax.scatter(plot_xs[no_random_centers+3], plot_ys[no_random_centers+3], color='purple')
+        plt.savefig(plots_dir / f'{plot_title} no_centers {no_centers} pred vs rf.png')
         plt.close()
 
+        fig, ax = plt.subplots()
+        ax.plot(plot2_xs[:-4], plot2_ys[:-4], 'bo')
+        ax.set(xlabel='volatility / predition error', ylabel='classification accuracy (rf)',
+               title=f'{plot_title}, no_centers {no_centers}')
+        ax.grid()
+        ax.scatter(plot2_xs[no_random_centers], plot2_ys[no_random_centers], color='red')
+        ax.scatter(plot2_xs[no_random_centers+1], plot2_ys[no_random_centers+1], color='green')
+        ax.scatter(plot2_xs[no_random_centers+2], plot2_ys[no_random_centers+2], color='orange')
+        ax.scatter(plot2_xs[no_random_centers+3], plot2_ys[no_random_centers+3], color='purple')
+        plt.savefig(plots_dir / f'{plot_title} no_centers {no_centers} vot div pred vs rf.png')
+        plt.close()
+
+    
+        fig, ax = plt.subplots()
+        ax.plot(plot3_xs[:-4], plot3_ys[:-4], 'bo')
+        ax.set(xlabel='volatility (taxicab)', ylabel='prediction error',
+               title=f'{plot_title}, no_centers {no_centers}')
+        ax.scatter(plot3_xs[no_random_centers], plot3_ys[no_random_centers], color='red')
+        ax.scatter(plot3_xs[no_random_centers+1], plot3_ys[no_random_centers+1], color='green')
+        ax.scatter(plot3_xs[no_random_centers+2], plot3_ys[no_random_centers+2], color='orange')
+        ax.scatter(plot3_xs[no_random_centers+3], plot3_ys[no_random_centers+3], color='purple')
+        ax.grid()
+        plt.savefig(plots_dir / f'{plot_title} no_centers {no_centers} vot vs pred.png')
+        plt.close()
 
 if __name__ == "__main__":
 
@@ -187,7 +248,7 @@ if __name__ == "__main__":
 
     input_size = 6
     no_classes = 12
-    plot_title = 'Cricket random centers vs cmeans'
+    plot_title = 'Cricket different centers'
     
     test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys, no_classes, input_size, plot_title)
 
@@ -199,6 +260,6 @@ if __name__ == "__main__":
 
     input_size = 3
     no_classes = 8
-    plot_title = 'Uwave random centers vs cmeans'
+    plot_title = 'Uwave different centers'
     
     test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys, no_classes, input_size, plot_title)

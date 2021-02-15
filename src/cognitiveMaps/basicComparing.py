@@ -135,3 +135,6 @@ def get_grouping_factor(models, input_size, extend_size, no_clusters):
         # print(kmeans.labels_)
         # print(classes)
     return sum(kmeans.labels_ == classes)/len(models)
+
+def get_volatility_taxicab(xs):
+    return np.mean(np.abs(np.asarray(xs[:-1])-np.asarray(xs[1:])))

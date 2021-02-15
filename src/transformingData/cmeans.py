@@ -22,6 +22,18 @@ def find_centers_and_transform(xses_series, c):
     return centers, transformed_xses_series
 
 
+
+def find_centers_in_first_and_transform_second(first_series, second_series, c):
+    squashed_xses = []
+    for xs in first_series:
+        squashed_xses.extend(xs)
+    squashed_xses = np.asarray(squashed_xses).transpose()
+    result = cmeans(data=squashed_xses, c=c, m=2.0, error=0.001, maxiter=1000)
+    centers = result[0].tolist()
+
+    return centers, transform(second_series, centers)
+
+
 def transform(xses_series, centers):
     squashed_xses = []
     for xs in xses_series:

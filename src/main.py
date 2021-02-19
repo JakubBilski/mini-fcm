@@ -119,7 +119,7 @@ def generate_ecm_checkpoints():
     output_path = pathlib.Path(f'./checkpoints/Cricket/ecm/{extended_size}_{learning_rate}/train/')
     # os.mkdir(output_path)
     os.mkdir(output_path)
-    xses_series, ys = loadArff.load_cricket_normalized(input_path)
+    xses_series, ys = loadArff.load_cricket(input_path)
     ecmCheckpoints.create_checkpoints(
         xses_series,
         ys,
@@ -138,7 +138,7 @@ def generate_fcm_checkpoints():
     output_path = pathlib.Path(f'./checkpoints/Cricket/fcm/{learning_rate}/train/')
     # os.mkdir(output_path)
     os.mkdir(output_path)
-    xses_series, ys = loadArff.load_cricket_normalized(input_path)
+    xses_series, ys = loadArff.load_cricket(input_path)
     fcmCheckpoints.create_checkpoints(
         xses_series,
         ys,
@@ -153,7 +153,7 @@ def generate_fcm_cmeans_checkpoints(learning_rate, derivative_order, no_centers,
     output_path = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{learning_rate}_{derivative_order}_{steps}/train/')
     # os.mkdir(output_path)
     os.mkdir(output_path)
-    xses_series, ys = loadArff.load_cricket_normalized(input_path)
+    xses_series, ys = loadArff.load_cricket(input_path)
     if derivative_order > 0:
         xses_series = derivatives.transform(xses_series, derivative_order)
     centers, xses_series = cmeans.find_centers_and_transform(xses_series, c=no_centers)
@@ -171,7 +171,7 @@ def generate_fcm_cmeans_checkpoints(learning_rate, derivative_order, no_centers,
     output_path = pathlib.Path(f'./checkpoints/Cricket/fcm_cmeans/{no_centers}_{learning_rate}_{derivative_order}_{steps}/test/')
     # os.mkdir(output_path)
     os.mkdir(output_path)
-    xses_series, ys = loadArff.load_cricket_normalized(input_path)
+    xses_series, ys = loadArff.load_cricket(input_path)
     if derivative_order > 0:
         xses_series = derivatives.transform(xses_series, derivative_order)
     xses_series = cmeans.transform(xses_series, centers=centers)
@@ -191,7 +191,7 @@ def generate_ecm_cmeans_checkpoints(learning_rate, derivative_order, no_centers,
     output_path = pathlib.Path(f'./checkpoints/Cricket/ecm_cmeans/{no_centers}_{learning_rate}_{derivative_order}_{extended_size}/train/')
     # os.mkdir(output_path)
     os.mkdir(output_path)
-    xses_series, ys = loadArff.load_cricket_normalized(input_path)
+    xses_series, ys = loadArff.load_cricket(input_path)
     if derivative_order > 0:
         xses_series = derivatives.transform(xses_series, derivative_order)
     centers, xses_series = cmeans.find_centers_and_transform(xses_series, c=no_centers)
@@ -211,7 +211,7 @@ def generate_ecm_cmeans_checkpoints(learning_rate, derivative_order, no_centers,
     output_path = pathlib.Path(f'./checkpoints/Cricket/ecm_cmeans/{no_centers}_{learning_rate}_{derivative_order}_{extended_size}/test/')
     # os.mkdir(output_path)
     os.mkdir(output_path)
-    xses_series, ys = loadArff.load_cricket_normalized(input_path)
+    xses_series, ys = loadArff.load_cricket(input_path)
     if derivative_order > 0:
         xses_series = derivatives.transform(xses_series, derivative_order)
     xses_series = cmeans.transform(xses_series, centers=centers)
@@ -232,7 +232,7 @@ def generate_mppi_checkpoints(derivative_order, no_centers):
     output_path = pathlib.Path(f'./checkpoints/Cricket/mppi/{no_centers}_{derivative_order}/train/')
     # os.mkdir(output_path)
     os.mkdir(output_path)
-    xses_series, ys = loadArff.load_cricket_normalized(input_path)
+    xses_series, ys = loadArff.load_cricket(input_path)
     if derivative_order > 0:
         xses_series = derivatives.transform(xses_series, derivative_order)
     centers, xses_series = cmeans.find_centers_and_transform(xses_series, c=no_centers)
@@ -248,7 +248,7 @@ def generate_mppi_checkpoints(derivative_order, no_centers):
     output_path = pathlib.Path(f'./checkpoints/Cricket/mppi/{no_centers}_{derivative_order}/test/')
     # os.mkdir(output_path)
     os.mkdir(output_path)
-    xses_series, ys = loadArff.load_cricket_normalized(input_path)
+    xses_series, ys = loadArff.load_cricket(input_path)
     if derivative_order > 0:
         xses_series = derivatives.transform(xses_series, derivative_order)
     xses_series = cmeans.transform(xses_series, centers=centers)
@@ -279,7 +279,7 @@ if __name__ == "__main__":
 
     # print(f"Learning no_centers {10}, derivative_order {0}")
     # input_path = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
-    # xses_series, ys = loadArff.load_cricket_normalized(input_path)
+    # xses_series, ys = loadArff.load_cricket(input_path)
     # centers, xses_series = cmeans.find_centers_and_transform(xses_series, 10)
     # mppi_maps = [MppiCognitiveMap(10) for xs in xses_series]
     # mean = 0
@@ -302,7 +302,7 @@ if __name__ == "__main__":
     # checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/train')
     # checkpoints_test_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/test')
     # input_file = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
-    # xses_series, ys = loadArff.load_cricket_normalized(input_file)
+    # xses_series, ys = loadArff.load_cricket(input_file)
     # train_training_paths = ecmCheckpoints.load_checkpoints(checkpoints_train_dir)
     # test_training_paths = ecmCheckpoints.load_checkpoints(checkpoints_test_dir)
     # for step in range(len(train_training_paths[0].points)):
@@ -327,7 +327,7 @@ if __name__ == "__main__":
     # # examine error of ecms
     # checkpoints_train_dir = pathlib.Path('./checkpoints/ecm/Cricket/3_0.002/train')
     # input_file = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
-    # xses_series, ys = loadArff.load_cricket_normalized(input_file)
+    # xses_series, ys = loadArff.load_cricket(input_file)
     # train_paths = ecmCheckpoints.load_checkpoints(checkpoints_train_dir)
     # for train_path in train_paths:
     #     print(f"New train path (class {train_path.class_name})")
@@ -341,7 +341,7 @@ if __name__ == "__main__":
     
     # # examine error of fcms
     # input_file = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
-    # xses_series, ys = loadArff.load_cricket_normalized(input_file)
+    # xses_series, ys = loadArff.load_cricket(input_file)
     # xses_series_derived = [derivatives.transform(xses_series, order) for order in [0,1,2]]
 
     # for derivative_order in [0]:
@@ -408,7 +408,7 @@ if __name__ == "__main__":
     # checkpoints_train_dir = pathlib.Path('./checkpoints/Cricket/fcm_cmeans/6_0.002_2/train')
     # checkpoints_test_dir = pathlib.Path('./checkpoints/Cricket/fcm_cmeans/6_0.002_2/test')
     # input_file = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
-    # xses_series, ys = loadArff.load_cricket_normalized(input_file)
+    # xses_series, ys = loadArff.load_cricket(input_file)
     # train_training_paths = fcmCheckpoints.load_checkpoints(checkpoints_train_dir)
     # test_training_paths = fcmCheckpoints.load_checkpoints(checkpoints_test_dir)
     # for step in range(len(train_training_paths[0].points)):
@@ -420,7 +420,7 @@ if __name__ == "__main__":
 
     # solution comparison for many derivative cmeans fcms
     # input_file = pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TEST.arff')
-    # xses_series, ys = loadArff.load_cricket_normalized(input_file)
+    # xses_series, ys = loadArff.load_cricket(input_file)
     # xses_series_derived = [derivatives.transform(xses_series, order) for order in [0,1,2]]
     # plot_xs, plot_ys = [], []
     # plot2_xs, plot2_ys = [], []

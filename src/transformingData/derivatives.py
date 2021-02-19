@@ -2,6 +2,8 @@ import copy
 
 
 def transform(xses_series, max_order):
+    if max_order == 0:
+        return [copy.deepcopy(xs) for xs in xses_series]
     transformed_xses_series = []
     input_size = len(xses_series[0][0])
     for xs in xses_series:

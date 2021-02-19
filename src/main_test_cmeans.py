@@ -12,6 +12,7 @@ from cognitiveMaps import svmClassifier
 from cognitiveMaps.mppiCognitiveMap import MppiCognitiveMap
 from transformingData import cmeans
 from transformingData import derivatives
+from transformingData import normalizing
 from transformingData import trajectory_slicing_linear
 from transformingData import trajectory_slicing_sigmoid
 from transformingData import trajectory_slicing_opposite
@@ -46,7 +47,6 @@ def compare_solutions(train_models, test_models, test_xs, input_size, no_classes
                     mistakes += 1
             print(f"nn_convergence accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
 
-
     if not TEST_ONLY_RF:
         mistakes = 0
         for test_model in test_models:
@@ -55,7 +55,6 @@ def compare_solutions(train_models, test_models, test_xs, input_size, no_classes
             if fit_class != test_model.get_class():
                 mistakes += 1
         print(f"best_mse_sum accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
-
 
     mistakes = 0
     cfr = rfClassifier.RFClassifier(
@@ -88,7 +87,7 @@ def generate_mppi_checkpoints(derivative_order, no_centers):
     output_path = pathlib.Path(f'./checkpoints/Cricket/mppi/{no_centers}_{derivative_order}/train/')
     # os.mkdir(output_path)
     os.mkdir(output_path)
-    xses_series, ys = loadArff.load_cricket_normalized(input_path)
+    xses_series, ys = loadArff.load_cricket(input_path)
     if derivative_order > 0:
         xses_series = derivatives.transform(xses_series, derivative_order)
     centers, xses_series = cmeans.find_centers_and_transform(xses_series, c=no_centers)
@@ -104,7 +103,7 @@ def generate_mppi_checkpoints(derivative_order, no_centers):
     output_path = pathlib.Path(f'./checkpoints/Cricket/mppi/{no_centers}_{derivative_order}/test/')
     # os.mkdir(output_path)
     os.mkdir(output_path)
-    xses_series, ys = loadArff.load_cricket_normalized(input_path)
+    xses_series, ys = loadArff.load_cricket(input_path)
     if derivative_order > 0:
         xses_series = derivatives.transform(xses_series, derivative_order)
     xses_series = cmeans.transform(xses_series, centers=centers)
@@ -119,16 +118,61 @@ def generate_mppi_checkpoints(derivative_order, no_centers):
 
 def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys, no_classes, input_size, plot_title):
     np.random.seed = 0
+    no_random_centers = 10
+    print(f"{plot_title}")
+    # print("Calculating results for bare input")
 
-    no_random_centers = 40
+    mins, maxs = normalizing.get_mins_and_maxs(train_xses_series + test_xses_series)
 
-    for no_centers in range(3, 8):
-        random_centerss = [[np.random.rand(input_size) for _1 in range(no_centers)] for _ in range(no_random_centers)]
-        print(f"no_centers {no_centers}")
-        print("Calculating different cmeans centers")
+    train_xses_series_transformed = normalizing.transform(
+        xses_series=train_xses_series,
+        mins = mins,
+        maxs = maxs)
+    
+    train_models = []
+
+    for xs, y in zip(train_xses_series_transformed, train_ys):
+        mppi = MppiCognitiveMap(input_size)
+        mppi.train(xs)
+        mppi.set_class(y)
+        train_models.append(mppi)
+
+    test_xses_series_transformed = normalizing.transform(
+        xses_series=test_xses_series,
+        mins = mins,
+        maxs = maxs)
+
+    test_models = []
+
+    for xs, y in zip(test_xses_series_transformed, test_ys):
+        mppi = MppiCognitiveMap(input_size)
+        mppi.train(xs)
+        mppi.set_class(y)
+        test_models.append(mppi)
+
+    bare_rf_accuracy = compare_solutions(
+        train_models=train_models,
+        test_models=test_models,
+        test_xs=test_xses_series_transformed,
+        input_size=input_size,
+        no_classes=no_classes)
+
+    bare_err = sum([mppi.get_error(xs) for mppi, xs in zip(train_models, train_xses_series_transformed)])/len(train_models)
+    bare_volatility = basicComparing.get_volatility_taxicab(xs)
+
+    mins = np.asarray(mins)
+    maxs = np.asarray(maxs)
+
+    for no_centers in tqdm(range(3, 15)):
+        random_centerss = [np.multiply(np.asarray([np.random.rand(input_size) for _1 in range(no_centers)]), maxs-mins)+mins
+            for _ in range(no_random_centers)]
+
+        # print(f"no_centers {no_centers}")
+        # print("Calculating centers with clustering")
         random_centerss.append(cmeans.find_centers_and_transform(
             xses_series=train_xses_series,
             c=no_centers)[0])
+        # print("Calculating other custom centers")
         sliced_train_xses_series = trajectory_slicing_linear.transform(train_xses_series)
         random_centerss.append(cmeans.find_centers_in_first_and_transform_second(
             first_series=sliced_train_xses_series,
@@ -149,9 +193,8 @@ def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys
         plot2_xs, plot2_ys = [], []
         plot3_xs, plot3_ys = [], []
 
-        print("Performing classification")
-        for step in tqdm(range(no_random_centers+4)):
-            random_centers = random_centerss[step]
+        # print("Performing classification")
+        for random_centers in random_centerss:
 
             train_xses_series_transformed = cmeans.transform(
                 xses_series=train_xses_series,
@@ -184,7 +227,7 @@ def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys
                 input_size=no_centers,
                 no_classes=no_classes)
 
-            err = sum([mppi.get_error(xs) for mppi, xs in zip(train_models, test_xses_series_transformed)])/len(train_models)
+            err = sum([mppi.get_error(xs) for mppi, xs in zip(train_models, train_xses_series_transformed)])/len(train_models)
             # print(f'Prediction error: {err}')
             volatility = basicComparing.get_volatility_taxicab(xs)
 
@@ -207,6 +250,7 @@ def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys
         ax.scatter(plot_xs[no_random_centers+1], plot_ys[no_random_centers+1], color='green')
         ax.scatter(plot_xs[no_random_centers+2], plot_ys[no_random_centers+2], color='orange')
         ax.scatter(plot_xs[no_random_centers+3], plot_ys[no_random_centers+3], color='purple')
+        ax.scatter(bare_err, bare_rf_accuracy, color='brown')
         plt.savefig(plots_dir / f'{plot_title} no_centers {no_centers} pred vs rf.png')
         plt.close()
 
@@ -219,47 +263,88 @@ def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys
         ax.scatter(plot2_xs[no_random_centers+1], plot2_ys[no_random_centers+1], color='green')
         ax.scatter(plot2_xs[no_random_centers+2], plot2_ys[no_random_centers+2], color='orange')
         ax.scatter(plot2_xs[no_random_centers+3], plot2_ys[no_random_centers+3], color='purple')
+        ax.scatter(bare_volatility / bare_err, bare_rf_accuracy, color='brown')
         plt.savefig(plots_dir / f'{plot_title} no_centers {no_centers} vot div pred vs rf.png')
         plt.close()
 
     
         fig, ax = plt.subplots()
         ax.plot(plot3_xs[:-4], plot3_ys[:-4], 'bo')
-        ax.set(xlabel='volatility (taxicab)', ylabel='prediction error',
+        ax.set(xlabel='volatility', ylabel='prediction error',
                title=f'{plot_title}, no_centers {no_centers}')
         ax.scatter(plot3_xs[no_random_centers], plot3_ys[no_random_centers], color='red')
         ax.scatter(plot3_xs[no_random_centers+1], plot3_ys[no_random_centers+1], color='green')
         ax.scatter(plot3_xs[no_random_centers+2], plot3_ys[no_random_centers+2], color='orange')
         ax.scatter(plot3_xs[no_random_centers+3], plot3_ys[no_random_centers+3], color='purple')
+        ax.scatter(bare_volatility, bare_err, color='brown')
         ax.grid()
         plt.savefig(plots_dir / f'{plot_title} no_centers {no_centers} vot vs pred.png')
         plt.close()
+
+
+def perform_tests(data_loading_function, test_path, train_path, no_classes, input_size, derivative_order, plot_title):
+    test_xses_series, test_ys = data_loading_function(test_path)
+    test_xses_series = derivatives.transform(test_xses_series, derivative_order)
+    
+    train_xses_series, train_ys = data_loading_function(train_path)
+    train_xses_series = derivatives.transform(train_xses_series, derivative_order)
+
+    mins, maxs = normalizing.get_mins_and_maxs(test_xses_series + train_xses_series)
+    test_xses_series = normalizing.transform(test_xses_series, mins, maxs)
+    train_xses_series = normalizing.transform(train_xses_series, mins, maxs)
+
+    input_size = input_size * (derivative_order + 1)
+
+    test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys, no_classes, input_size, plot_title)
+
+
 
 if __name__ == "__main__":
 
     os.mkdir(plots_dir)
 
-    # solution comparison for many derivative cmeans mppi
-    test_input_file = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
-    test_xses_series, test_ys = loadArff.load_cricket_normalized(test_input_file)
-    
-    train_input_path = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
-    train_xses_series, train_ys = loadArff.load_cricket_normalized(train_input_path)
+    perform_tests(
+        data_loading_function=loadArff.load_articulary_word_recognition,
+        test_path=pathlib.Path('./data/ArticularyWordRecognition/ArticularyWordRecognition_TEST.arff'),
+        train_path=pathlib.Path('./data/ArticularyWordRecognition/ArticularyWordRecognition_TRAIN.arff'),
+        no_classes=25,
+        input_size=9,
+        derivative_order=0,
+        plot_title='ArticularyWordRecognition different centers')
 
-    input_size = 6
-    no_classes = 12
-    plot_title = 'Cricket different centers'
-    
-    test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys, no_classes, input_size, plot_title)
+    perform_tests(
+        data_loading_function=loadArff.load_cricket,
+        test_path=pathlib.Path('./data/Cricket/CRICKET_TEST.arff'),
+        train_path=pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff'),
+        no_classes=12,
+        input_size=6,
+        derivative_order=0,
+        plot_title='Cricket different centers')
 
-    test_input_file = pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TEST.arff')
-    test_xses_series, test_ys = loadArff.load_uwave_normalized(test_input_file)
-    
-    train_input_path = pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TRAIN.arff')
-    train_xses_series, train_ys = loadArff.load_uwave_normalized(train_input_path)
+    perform_tests(
+        data_loading_function=loadArff.load_uwave,
+        test_path=pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TEST.arff'),
+        train_path=pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TRAIN.arff'),
+        no_classes=12,
+        input_size=3,
+        derivative_order=0,
+        plot_title='Uwave different centers')
 
-    input_size = 3
-    no_classes = 8
-    plot_title = 'Uwave different centers'
-    
-    test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys, no_classes, input_size, plot_title)
+    perform_tests(
+        data_loading_function=loadArff.load_basic_motions,
+        test_path=pathlib.Path('./data/BasicMotions/BasicMotions_TEST.arff'),
+        train_path=pathlib.Path('./data/BasicMotions/BasicMotions_TRAIN.arff'),
+        no_classes=4,
+        input_size=6,
+        derivative_order=0,
+        plot_title='BasicMotions different centers')
+
+    perform_tests(
+        data_loading_function=loadArff.load_atrial_fibrilation,
+        test_path=pathlib.Path('./data/AtrialFibrillation/AtrialFibrillation_TEST.arff'),
+        train_path=pathlib.Path('./data/AtrialFibrillation/AtrialFibrillation_TRAIN.arff'),
+        no_classes=3,
+        input_size=2,
+        derivative_order=0,
+        plot_title='AtrialFibrillation different centers')
+

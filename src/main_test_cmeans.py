@@ -24,7 +24,16 @@ plots_dir = pathlib.Path(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}
 
 def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys, no_classes, input_size, plot_title):
     np.random.seed = 0
-    no_random_centers = 1
+    no_random_centers = 20
+
+    mainplot_xs = []
+    mainplot_ys_centroids = []
+    mainplot_ys_random_mean = []
+    mainplot_ys_random_up = []
+    mainplot_ys_random_bottom = []
+    mainplot_ys_linear = []
+    mainplot_ys_quadratic = []
+
     print(f"{plot_title}")
     # print("Calculating results for bare input")
 
@@ -69,42 +78,37 @@ def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys
     mins = np.asarray(mins)
     maxs = np.asarray(maxs)
 
-    for no_centers in tqdm(range(3, 4)):
-        random_centerss = [np.multiply(np.asarray([np.random.rand(input_size) for _1 in range(no_centers)]), maxs-mins)+mins
+    for no_centers in tqdm(range(3, 15)):
+        centerss = [np.multiply(np.asarray([np.random.rand(input_size) for _1 in range(no_centers)]), maxs-mins)+mins
             for _ in range(no_random_centers)]
 
         # print(f"no_centers {no_centers}")
         # print("Calculating centers with clustering")
-        random_centerss.append(cmeans.find_centers_and_transform(
+        centerss.append(cmeans.find_centers_and_transform(
             xses_series=train_xses_series,
             c=no_centers)[0])
         # print("Calculating other custom centers")
         sliced_train_xses_series = trajectory_slicing_linear.transform(train_xses_series)
-        random_centerss.append(cmeans.find_centers_in_first_and_transform_second(
+        centerss.append(cmeans.find_centers_in_first_and_transform_second(
             first_series=sliced_train_xses_series,
             second_series=train_xses_series,
             c=no_centers)[0])
         sliced_sigmoid_train_xses_series = trajectory_slicing_sigmoid.transform(train_xses_series)
-        random_centerss.append(cmeans.find_centers_in_first_and_transform_second(
-            first_series=sliced_sigmoid_train_xses_series,
-            second_series=train_xses_series,
-            c=no_centers)[0])
-        sliced_sigmoid_train_xses_series = trajectory_slicing_opposite.transform(train_xses_series)
-        random_centerss.append(cmeans.find_centers_in_first_and_transform_second(
+        centerss.append(cmeans.find_centers_in_first_and_transform_second(
             first_series=sliced_sigmoid_train_xses_series,
             second_series=train_xses_series,
             c=no_centers)[0])
 
-        plot_xs, plot_ys = [], []
-        plot2_xs, plot2_ys = [], []
-        plot3_xs, plot3_ys = [], []
+        prediction_errors = []
+        classification_accuracies = []
+        volatilities = []
 
         # print("Performing classification")
-        for random_centers in random_centerss:
+        for centers in centerss:
 
             train_xses_series_transformed = cmeans.transform(
                 xses_series=train_xses_series,
-                centers=random_centers)
+                centers=centers)
             
             train_models = []
 
@@ -116,7 +120,7 @@ def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys
         
             test_xses_series_transformed = cmeans.transform(
                 xses_series=test_xses_series,
-                centers=random_centers)
+                centers=centers)
 
             test_models = []
 
@@ -137,55 +141,74 @@ def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys
             # print(f'Prediction error: {err}')
             volatility = basicExamining.get_volatility_taxicab(xs)
 
-            plot_xs.append(err)
-            plot_ys.append(rf_accuracy)
-
-            plot2_xs.append(volatility / err)
-            plot2_ys.append(rf_accuracy)
-            
-            plot3_xs.append(volatility)
-            plot3_ys.append(err)
-
+            prediction_errors.append(err)
+            classification_accuracies.append(rf_accuracy)
+            volatilities.append(volatility)
 
         fig, ax = plt.subplots()
-        ax.plot(plot_xs[:-4], plot_ys[:-4], 'bo')
+        ax.plot(prediction_errors[:-3], classification_accuracies[:-3], 'bo')
         ax.set(xlabel='prediction error', ylabel='classification accuracy (rf)',
         title=f'{plot_title}, no_centers {no_centers}')
         ax.grid()
-        ax.scatter(plot_xs[no_random_centers], plot_ys[no_random_centers], color='red')
-        ax.scatter(plot_xs[no_random_centers+1], plot_ys[no_random_centers+1], color='green')
-        ax.scatter(plot_xs[no_random_centers+2], plot_ys[no_random_centers+2], color='orange')
-        ax.scatter(plot_xs[no_random_centers+3], plot_ys[no_random_centers+3], color='purple')
+        ax.scatter(prediction_errors[no_random_centers], classification_accuracies[no_random_centers], color='red')
+        ax.scatter(prediction_errors[no_random_centers+1], classification_accuracies[no_random_centers+1], color='green')
+        ax.scatter(prediction_errors[no_random_centers+2], classification_accuracies[no_random_centers+2], color='orange')
         ax.scatter(bare_err, bare_rf_accuracy, color='brown')
         plt.savefig(plots_dir / f'{plot_title} no_centers {no_centers} pred vs rf.png')
         plt.close()
 
         fig, ax = plt.subplots()
-        ax.plot(plot2_xs[:-4], plot2_ys[:-4], 'bo')
-        ax.set(xlabel='volatility / predition error', ylabel='classification accuracy (rf)',
+        ax.plot(volatilities[:-3], classification_accuracies[:-3], 'bo')
+        ax.set(xlabel='volatility', ylabel='classification accuracy (rf)',
                title=f'{plot_title}, no_centers {no_centers}')
         ax.grid()
-        ax.scatter(plot2_xs[no_random_centers], plot2_ys[no_random_centers], color='red')
-        ax.scatter(plot2_xs[no_random_centers+1], plot2_ys[no_random_centers+1], color='green')
-        ax.scatter(plot2_xs[no_random_centers+2], plot2_ys[no_random_centers+2], color='orange')
-        ax.scatter(plot2_xs[no_random_centers+3], plot2_ys[no_random_centers+3], color='purple')
+        ax.scatter(volatilities[no_random_centers], classification_accuracies[no_random_centers], color='red')
+        ax.scatter(volatilities[no_random_centers+1], classification_accuracies[no_random_centers+1], color='green')
+        ax.scatter(volatilities[no_random_centers+2], classification_accuracies[no_random_centers+2], color='orange')
         ax.scatter(bare_volatility / bare_err, bare_rf_accuracy, color='brown')
         plt.savefig(plots_dir / f'{plot_title} no_centers {no_centers} vot div pred vs rf.png')
         plt.close()
 
     
         fig, ax = plt.subplots()
-        ax.plot(plot3_xs[:-4], plot3_ys[:-4], 'bo')
+        ax.plot(volatilities[:-3], prediction_errors[:-3], 'bo')
         ax.set(xlabel='volatility', ylabel='prediction error',
                title=f'{plot_title}, no_centers {no_centers}')
-        ax.scatter(plot3_xs[no_random_centers], plot3_ys[no_random_centers], color='red')
-        ax.scatter(plot3_xs[no_random_centers+1], plot3_ys[no_random_centers+1], color='green')
-        ax.scatter(plot3_xs[no_random_centers+2], plot3_ys[no_random_centers+2], color='orange')
-        ax.scatter(plot3_xs[no_random_centers+3], plot3_ys[no_random_centers+3], color='purple')
+        ax.scatter(volatilities[no_random_centers], prediction_errors[no_random_centers], color='red')
+        ax.scatter(volatilities[no_random_centers+1], prediction_errors[no_random_centers+1], color='green')
+        ax.scatter(volatilities[no_random_centers+2], prediction_errors[no_random_centers+2], color='orange')
         ax.scatter(bare_volatility, bare_err, color='brown')
         ax.grid()
         plt.savefig(plots_dir / f'{plot_title} no_centers {no_centers} vot vs pred.png')
         plt.close()
+
+        mainplot_xs.append(no_centers)
+        mainplot_ys_centroids.append(classification_accuracies[no_random_centers])
+        mainplot_ys_linear.append(classification_accuracies[no_random_centers+1])
+        mainplot_ys_quadratic.append(classification_accuracies[no_random_centers+2])
+        mainplot_ys_random_mean.append(np.mean(classification_accuracies[:no_random_centers]))
+        mainplot_ys_random_up.append(np.max(classification_accuracies[:no_random_centers]))
+        mainplot_ys_random_bottom.append(np.min(classification_accuracies[:no_random_centers]))
+
+    fig, ax = plt.subplots()
+    ax.fill_between(mainplot_xs, mainplot_ys_random_bottom, mainplot_ys_random_up, facecolor='lightsteelblue')
+    ax.plot(mainplot_xs, mainplot_ys_centroids, color='red')
+    ax.plot(mainplot_xs, mainplot_ys_random_mean, color='blue')
+    ax.plot(mainplot_xs, mainplot_ys_linear, color='green')
+    ax.plot(mainplot_xs, mainplot_ys_quadratic, color='orange')
+    ax.set(xlabel='number of centers', ylabel='classification accuracy (rf)', title=f'mainplot extended {plot_title}')
+    ax.grid()
+    plt.savefig(plots_dir / f'mainplot extended {plot_title}.png')
+    plt.close()
+
+    fig, ax = plt.subplots()
+    ax.fill_between(mainplot_xs, mainplot_ys_random_bottom, mainplot_ys_random_up, facecolor='lightsteelblue')
+    ax.plot(mainplot_xs, mainplot_ys_centroids, color='red')
+    ax.plot(mainplot_xs, mainplot_ys_random_mean, color='blue')
+    ax.set(xlabel='number of centers', ylabel='classification accuracy (rf)', title=f'mainplot {plot_title}')
+    ax.grid()
+    plt.savefig(plots_dir / f'mainplot {plot_title}.png')
+    plt.close()
 
 
 def perform_tests(data_loading_function, test_path, train_path, no_classes, input_size, derivative_order, plot_title):
@@ -204,145 +227,144 @@ def perform_tests(data_loading_function, test_path, train_path, no_classes, inpu
     test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys, no_classes, input_size, plot_title)
 
 
-
 if __name__ == "__main__":
 
     os.mkdir(plots_dir)
 
-    # perform_tests(
-    #     data_loading_function=loadArff.load_articulary_word_recognition,
-    #     test_path=pathlib.Path('./data/ArticularyWordRecognition/ArticularyWordRecognition_TEST.arff'),
-    #     train_path=pathlib.Path('./data/ArticularyWordRecognition/ArticularyWordRecognition_TRAIN.arff'),
-    #     no_classes=25,
-    #     input_size=9,
-    #     derivative_order=0,
-    #     plot_title='ArticularyWordRecognition different centers')
+    perform_tests(
+        data_loading_function=loadArff.load_articulary_word_recognition,
+        test_path=pathlib.Path('./data/ArticularyWordRecognition/ArticularyWordRecognition_TEST.arff'),
+        train_path=pathlib.Path('./data/ArticularyWordRecognition/ArticularyWordRecognition_TRAIN.arff'),
+        no_classes=25,
+        input_size=9,
+        derivative_order=0,
+        plot_title='ArticularyWordRecognition different centers')
+
+    perform_tests(
+        data_loading_function=loadArff.load_cricket,
+        test_path=pathlib.Path('./data/Cricket/CRICKET_TEST.arff'),
+        train_path=pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff'),
+        no_classes=12,
+        input_size=6,
+        derivative_order=0,
+        plot_title='Cricket different centers')
+
+    perform_tests(
+        data_loading_function=loadArff.load_uwave,
+        test_path=pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TEST.arff'),
+        train_path=pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TRAIN.arff'),
+        no_classes=12,
+        input_size=3,
+        derivative_order=0,
+        plot_title='Uwave different centers')
+
+    perform_tests(
+        data_loading_function=loadArff.load_basic_motions,
+        test_path=pathlib.Path('./data/BasicMotions/BasicMotions_TEST.arff'),
+        train_path=pathlib.Path('./data/BasicMotions/BasicMotions_TRAIN.arff'),
+        no_classes=4,
+        input_size=6,
+        derivative_order=0,
+        plot_title='BasicMotions different centers')
+
+    perform_tests(
+        data_loading_function=loadArff.load_atrial_fibrilation,
+        test_path=pathlib.Path('./data/AtrialFibrillation/AtrialFibrillation_TEST.arff'),
+        train_path=pathlib.Path('./data/AtrialFibrillation/AtrialFibrillation_TRAIN.arff'),
+        no_classes=3,
+        input_size=2,
+        derivative_order=0,
+        plot_title='AtrialFibrillation different centers')
 
     # perform_tests(
-    #     data_loading_function=loadArff.load_cricket,
-    #     test_path=pathlib.Path('./data/Cricket/CRICKET_TEST.arff'),
-    #     train_path=pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff'),
-    #     no_classes=12,
+    #     data_loading_function=loadArff.load_eigen_worms,
+    #     test_path=pathlib.Path('./data/EigenWorms/EigenWorms_TEST.arff'),
+    #     train_path=pathlib.Path('./data/EigenWorms/EigenWorms_TRAIN.arff'),
+    #     no_classes=5,
     #     input_size=6,
     #     derivative_order=0,
-    #     plot_title='Cricket different centers')
+    #     plot_title='EigenWorms different centers')
+
+    perform_tests(
+        data_loading_function=loadArff.load_epilepsy,
+        test_path=pathlib.Path('./data/Epilepsy/Epilepsy_TEST.arff'),
+        train_path=pathlib.Path('./data/Epilepsy/Epilepsy_TRAIN.arff'),
+        no_classes=4,
+        input_size=3,
+        derivative_order=0,
+        plot_title='Epilepsy different centers')
+
+    perform_tests(
+        data_loading_function=loadArff.load_ethanol_concentration,
+        test_path=pathlib.Path('./data/EthanolConcentration/EthanolConcentration_TEST.arff'),
+        train_path=pathlib.Path('./data/EthanolConcentration/EthanolConcentration_TRAIN.arff'),
+        no_classes=4,
+        input_size=3,
+        derivative_order=0,
+        plot_title='EthanolConcentration different centers')
+
+    perform_tests(
+        data_loading_function=loadArff.load_ering,
+        test_path=pathlib.Path('./data/ERing/ERing_TEST.arff'),
+        train_path=pathlib.Path('./data/ERing/ERing_TRAIN.arff'),
+        no_classes=6,
+        input_size=4,
+        derivative_order=0,
+        plot_title='ERing different centers')
+
+    perform_tests(
+        data_loading_function=loadArff.load_finger_movements,
+        test_path=pathlib.Path('./data/FingerMovements/FingerMovements_TEST.arff'),
+        train_path=pathlib.Path('./data/FingerMovements/FingerMovements_TRAIN.arff'),
+        no_classes=2,
+        input_size=28,
+        derivative_order=0,
+        plot_title='FingerMovements different centers')
+
+    perform_tests(
+        data_loading_function=loadArff.load_hand_movement_direction,
+        test_path=pathlib.Path('./data/HandMovementDirection/HandMovementDirection_TEST.arff'),
+        train_path=pathlib.Path('./data/HandMovementDirection/HandMovementDirection_TRAIN.arff'),
+        no_classes=4,
+        input_size=10,
+        derivative_order=0,
+        plot_title='HandMovementDirection different centers')
+
+    perform_tests(
+        data_loading_function=loadArff.load_handwriting,
+        test_path=pathlib.Path('./data/Handwriting/Handwriting_TEST.arff'),
+        train_path=pathlib.Path('./data/Handwriting/Handwriting_TRAIN.arff'),
+        no_classes=26,
+        input_size=3,
+        derivative_order=0,
+        plot_title='Handwriting different centers')
+
+    perform_tests(
+        data_loading_function=loadArff.load_libras,
+        test_path=pathlib.Path('./data/Libras/Libras_TEST.arff'),
+        train_path=pathlib.Path('./data/Libras/Libras_TRAIN.arff'),
+        no_classes=15,
+        input_size=2,
+        derivative_order=0,
+        plot_title='Libras different centers')
+
+    perform_tests(
+        data_loading_function=loadArff.load_natops,
+        test_path=pathlib.Path('./data/NATOPS/NATOPS_TEST.arff'),
+        train_path=pathlib.Path('./data/NATOPS/NATOPS_TRAIN.arff'),
+        no_classes=6,
+        input_size=24,
+        derivative_order=0,
+        plot_title='NATOPS different centers')
 
     # perform_tests(
-    #     data_loading_function=loadArff.load_uwave,
-    #     test_path=pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TEST.arff'),
-    #     train_path=pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TRAIN.arff'),
-    #     no_classes=12,
-    #     input_size=3,
-    #     derivative_order=0,
-    #     plot_title='Uwave different centers')
-
-    # perform_tests(
-    #     data_loading_function=loadArff.load_basic_motions,
-    #     test_path=pathlib.Path('./data/BasicMotions/BasicMotions_TEST.arff'),
-    #     train_path=pathlib.Path('./data/BasicMotions/BasicMotions_TRAIN.arff'),
-    #     no_classes=4,
-    #     input_size=6,
-    #     derivative_order=0,
-    #     plot_title='BasicMotions different centers')
-
-    # perform_tests(
-    #     data_loading_function=loadArff.load_atrial_fibrilation,
-    #     test_path=pathlib.Path('./data/AtrialFibrillation/AtrialFibrillation_TEST.arff'),
-    #     train_path=pathlib.Path('./data/AtrialFibrillation/AtrialFibrillation_TRAIN.arff'),
-    #     no_classes=3,
+    #     data_loading_function=loadArff.load_pen_digits,
+    #     test_path=pathlib.Path('./data/PenDigits/PenDigits_TEST.arff'),
+    #     train_path=pathlib.Path('./data/PenDigits/PenDigits_TRAIN.arff'),
+    #     no_classes=10,
     #     input_size=2,
     #     derivative_order=0,
-    #     plot_title='AtrialFibrillation different centers')
-
-    # # perform_tests(
-    # #     data_loading_function=loadArff.load_eigen_worms,
-    # #     test_path=pathlib.Path('./data/EigenWorms/EigenWorms_TEST.arff'),
-    # #     train_path=pathlib.Path('./data/EigenWorms/EigenWorms_TRAIN.arff'),
-    # #     no_classes=5,
-    # #     input_size=6,
-    # #     derivative_order=0,
-    # #     plot_title='EigenWorms different centers')
-
-    # perform_tests(
-    #     data_loading_function=loadArff.load_epilepsy,
-    #     test_path=pathlib.Path('./data/Epilepsy/Epilepsy_TEST.arff'),
-    #     train_path=pathlib.Path('./data/Epilepsy/Epilepsy_TRAIN.arff'),
-    #     no_classes=4,
-    #     input_size=3,
-    #     derivative_order=0,
-    #     plot_title='Epilepsy different centers')
-
-    # perform_tests(
-    #     data_loading_function=loadArff.load_ethanol_concentration,
-    #     test_path=pathlib.Path('./data/EthanolConcentration/EthanolConcentration_TEST.arff'),
-    #     train_path=pathlib.Path('./data/EthanolConcentration/EthanolConcentration_TRAIN.arff'),
-    #     no_classes=4,
-    #     input_size=3,
-    #     derivative_order=0,
-    #     plot_title='EthanolConcentration different centers')
-
-    # perform_tests(
-    #     data_loading_function=loadArff.load_ering,
-    #     test_path=pathlib.Path('./data/ERing/ERing_TEST.arff'),
-    #     train_path=pathlib.Path('./data/ERing/ERing_TRAIN.arff'),
-    #     no_classes=6,
-    #     input_size=4,
-    #     derivative_order=0,
-    #     plot_title='ERing different centers')
-
-    # perform_tests(
-    #     data_loading_function=loadArff.load_finger_movements,
-    #     test_path=pathlib.Path('./data/FingerMovements/FingerMovements_TEST.arff'),
-    #     train_path=pathlib.Path('./data/FingerMovements/FingerMovements_TRAIN.arff'),
-    #     no_classes=2,
-    #     input_size=28,
-    #     derivative_order=0,
-    #     plot_title='FingerMovements different centers')
-
-    # perform_tests(
-    #     data_loading_function=loadArff.load_hand_movement_direction,
-    #     test_path=pathlib.Path('./data/HandMovementDirection/HandMovementDirection_TEST.arff'),
-    #     train_path=pathlib.Path('./data/HandMovementDirection/HandMovementDirection_TRAIN.arff'),
-    #     no_classes=4,
-    #     input_size=10,
-    #     derivative_order=0,
-    #     plot_title='HandMovementDirection different centers')
-
-    # perform_tests(
-    #     data_loading_function=loadArff.load_handwriting,
-    #     test_path=pathlib.Path('./data/Handwriting/Handwriting_TEST.arff'),
-    #     train_path=pathlib.Path('./data/Handwriting/Handwriting_TRAIN.arff'),
-    #     no_classes=26,
-    #     input_size=3,
-    #     derivative_order=0,
-    #     plot_title='Handwriting different centers')
-
-    # perform_tests(
-    #     data_loading_function=loadArff.load_libras,
-    #     test_path=pathlib.Path('./data/Libras/Libras_TEST.arff'),
-    #     train_path=pathlib.Path('./data/Libras/Libras_TRAIN.arff'),
-    #     no_classes=15,
-    #     input_size=2,
-    #     derivative_order=0,
-    #     plot_title='Libras different centers')
-
-    # perform_tests(
-    #     data_loading_function=loadArff.load_natops,
-    #     test_path=pathlib.Path('./data/NATOPS/NATOPS_TEST.arff'),
-    #     train_path=pathlib.Path('./data/NATOPS/NATOPS_TRAIN.arff'),
-    #     no_classes=6,
-    #     input_size=24,
-    #     derivative_order=0,
-    #     plot_title='NATOPS different centers')
-
-    # # perform_tests(
-    # #     data_loading_function=loadArff.load_pen_digits,
-    # #     test_path=pathlib.Path('./data/PenDigits/PenDigits_TEST.arff'),
-    # #     train_path=pathlib.Path('./data/PenDigits/PenDigits_TRAIN.arff'),
-    # #     no_classes=10,
-    # #     input_size=2,
-    # #     derivative_order=0,
-    # #     plot_title='PenDigits different centers')
+    #     plot_title='PenDigits different centers')
 
     # perform_tests(
     #     data_loading_function=loadArff.load_phoneme,
@@ -379,15 +401,6 @@ if __name__ == "__main__":
         input_size=7,
         derivative_order=0,
         plot_title='SelfRegulationSCP2 different centers')
-
-    perform_tests(
-        data_loading_function=loadArff.load_spoken_arabic_digits,
-        test_path=pathlib.Path('./data/SpokenArabicDigits/SpokenArabicDigits_TEST.arff'),
-        train_path=pathlib.Path('./data/SpokenArabicDigits/SpokenArabicDigits_TRAIN.arff'),
-        no_classes=10,
-        input_size=13,
-        derivative_order=0,
-        plot_title='SpokenArabicDigits different centers')
 
     perform_tests(
         data_loading_function=loadArff.load_stand_walk_jump,

@@ -211,13 +211,13 @@ def load_self_regulation_scp2(path):
     ys = [float(classes[a]) for a in df['cortical']]
     return xses_series, ys
 
-
-def load_spoken_arabic_digits(path):
-    data, _ = arff.loadarff(path)
-    df = pd.DataFrame(data)
-    xses_series = _load_arff_basic_xses_series(df['MFCCcoefficient'], 13)
-    ys = [float(a)-1.0 for a in df['class']]
-    return xses_series, ys
+# # missing values
+# def load_spoken_arabic_digits(path):
+#     data, _ = arff.loadarff(path)
+#     df = pd.DataFrame(data)
+#     xses_series = _load_arff_basic_xses_series(df['MFCCcoefficient'], 13)
+#     ys = [float(a)-1.0 for a in df['class']]
+#     return xses_series, ys
 
 
 def load_stand_walk_jump(path):

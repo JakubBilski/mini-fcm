@@ -118,7 +118,7 @@ def generate_mppi_checkpoints(derivative_order, no_centers):
 
 def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys, no_classes, input_size, plot_title):
     np.random.seed = 0
-    no_random_centers = 10
+    no_random_centers = 1
     print(f"{plot_title}")
     # print("Calculating results for bare input")
 
@@ -163,7 +163,7 @@ def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys
     mins = np.asarray(mins)
     maxs = np.asarray(maxs)
 
-    for no_centers in tqdm(range(3, 15)):
+    for no_centers in tqdm(range(3, 4)):
         random_centerss = [np.multiply(np.asarray([np.random.rand(input_size) for _1 in range(no_centers)]), maxs-mins)+mins
             for _ in range(no_random_centers)]
 
@@ -303,48 +303,191 @@ if __name__ == "__main__":
 
     os.mkdir(plots_dir)
 
-    perform_tests(
-        data_loading_function=loadArff.load_articulary_word_recognition,
-        test_path=pathlib.Path('./data/ArticularyWordRecognition/ArticularyWordRecognition_TEST.arff'),
-        train_path=pathlib.Path('./data/ArticularyWordRecognition/ArticularyWordRecognition_TRAIN.arff'),
-        no_classes=25,
-        input_size=9,
-        derivative_order=0,
-        plot_title='ArticularyWordRecognition different centers')
+    # perform_tests(
+    #     data_loading_function=loadArff.load_articulary_word_recognition,
+    #     test_path=pathlib.Path('./data/ArticularyWordRecognition/ArticularyWordRecognition_TEST.arff'),
+    #     train_path=pathlib.Path('./data/ArticularyWordRecognition/ArticularyWordRecognition_TRAIN.arff'),
+    #     no_classes=25,
+    #     input_size=9,
+    #     derivative_order=0,
+    #     plot_title='ArticularyWordRecognition different centers')
+
+    # perform_tests(
+    #     data_loading_function=loadArff.load_cricket,
+    #     test_path=pathlib.Path('./data/Cricket/CRICKET_TEST.arff'),
+    #     train_path=pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff'),
+    #     no_classes=12,
+    #     input_size=6,
+    #     derivative_order=0,
+    #     plot_title='Cricket different centers')
+
+    # perform_tests(
+    #     data_loading_function=loadArff.load_uwave,
+    #     test_path=pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TEST.arff'),
+    #     train_path=pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TRAIN.arff'),
+    #     no_classes=12,
+    #     input_size=3,
+    #     derivative_order=0,
+    #     plot_title='Uwave different centers')
+
+    # perform_tests(
+    #     data_loading_function=loadArff.load_basic_motions,
+    #     test_path=pathlib.Path('./data/BasicMotions/BasicMotions_TEST.arff'),
+    #     train_path=pathlib.Path('./data/BasicMotions/BasicMotions_TRAIN.arff'),
+    #     no_classes=4,
+    #     input_size=6,
+    #     derivative_order=0,
+    #     plot_title='BasicMotions different centers')
+
+    # perform_tests(
+    #     data_loading_function=loadArff.load_atrial_fibrilation,
+    #     test_path=pathlib.Path('./data/AtrialFibrillation/AtrialFibrillation_TEST.arff'),
+    #     train_path=pathlib.Path('./data/AtrialFibrillation/AtrialFibrillation_TRAIN.arff'),
+    #     no_classes=3,
+    #     input_size=2,
+    #     derivative_order=0,
+    #     plot_title='AtrialFibrillation different centers')
+
+    # # perform_tests(
+    # #     data_loading_function=loadArff.load_eigen_worms,
+    # #     test_path=pathlib.Path('./data/EigenWorms/EigenWorms_TEST.arff'),
+    # #     train_path=pathlib.Path('./data/EigenWorms/EigenWorms_TRAIN.arff'),
+    # #     no_classes=5,
+    # #     input_size=6,
+    # #     derivative_order=0,
+    # #     plot_title='EigenWorms different centers')
+
+    # perform_tests(
+    #     data_loading_function=loadArff.load_epilepsy,
+    #     test_path=pathlib.Path('./data/Epilepsy/Epilepsy_TEST.arff'),
+    #     train_path=pathlib.Path('./data/Epilepsy/Epilepsy_TRAIN.arff'),
+    #     no_classes=4,
+    #     input_size=3,
+    #     derivative_order=0,
+    #     plot_title='Epilepsy different centers')
+
+    # perform_tests(
+    #     data_loading_function=loadArff.load_ethanol_concentration,
+    #     test_path=pathlib.Path('./data/EthanolConcentration/EthanolConcentration_TEST.arff'),
+    #     train_path=pathlib.Path('./data/EthanolConcentration/EthanolConcentration_TRAIN.arff'),
+    #     no_classes=4,
+    #     input_size=3,
+    #     derivative_order=0,
+    #     plot_title='EthanolConcentration different centers')
+
+    # perform_tests(
+    #     data_loading_function=loadArff.load_ering,
+    #     test_path=pathlib.Path('./data/ERing/ERing_TEST.arff'),
+    #     train_path=pathlib.Path('./data/ERing/ERing_TRAIN.arff'),
+    #     no_classes=6,
+    #     input_size=4,
+    #     derivative_order=0,
+    #     plot_title='ERing different centers')
+
+    # perform_tests(
+    #     data_loading_function=loadArff.load_finger_movements,
+    #     test_path=pathlib.Path('./data/FingerMovements/FingerMovements_TEST.arff'),
+    #     train_path=pathlib.Path('./data/FingerMovements/FingerMovements_TRAIN.arff'),
+    #     no_classes=2,
+    #     input_size=28,
+    #     derivative_order=0,
+    #     plot_title='FingerMovements different centers')
+
+    # perform_tests(
+    #     data_loading_function=loadArff.load_hand_movement_direction,
+    #     test_path=pathlib.Path('./data/HandMovementDirection/HandMovementDirection_TEST.arff'),
+    #     train_path=pathlib.Path('./data/HandMovementDirection/HandMovementDirection_TRAIN.arff'),
+    #     no_classes=4,
+    #     input_size=10,
+    #     derivative_order=0,
+    #     plot_title='HandMovementDirection different centers')
+
+    # perform_tests(
+    #     data_loading_function=loadArff.load_handwriting,
+    #     test_path=pathlib.Path('./data/Handwriting/Handwriting_TEST.arff'),
+    #     train_path=pathlib.Path('./data/Handwriting/Handwriting_TRAIN.arff'),
+    #     no_classes=26,
+    #     input_size=3,
+    #     derivative_order=0,
+    #     plot_title='Handwriting different centers')
+
+    # perform_tests(
+    #     data_loading_function=loadArff.load_libras,
+    #     test_path=pathlib.Path('./data/Libras/Libras_TEST.arff'),
+    #     train_path=pathlib.Path('./data/Libras/Libras_TRAIN.arff'),
+    #     no_classes=15,
+    #     input_size=2,
+    #     derivative_order=0,
+    #     plot_title='Libras different centers')
+
+    # perform_tests(
+    #     data_loading_function=loadArff.load_natops,
+    #     test_path=pathlib.Path('./data/NATOPS/NATOPS_TEST.arff'),
+    #     train_path=pathlib.Path('./data/NATOPS/NATOPS_TRAIN.arff'),
+    #     no_classes=6,
+    #     input_size=24,
+    #     derivative_order=0,
+    #     plot_title='NATOPS different centers')
+
+    # # perform_tests(
+    # #     data_loading_function=loadArff.load_pen_digits,
+    # #     test_path=pathlib.Path('./data/PenDigits/PenDigits_TEST.arff'),
+    # #     train_path=pathlib.Path('./data/PenDigits/PenDigits_TRAIN.arff'),
+    # #     no_classes=10,
+    # #     input_size=2,
+    # #     derivative_order=0,
+    # #     plot_title='PenDigits different centers')
 
     perform_tests(
-        data_loading_function=loadArff.load_cricket,
-        test_path=pathlib.Path('./data/Cricket/CRICKET_TEST.arff'),
-        train_path=pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff'),
-        no_classes=12,
-        input_size=6,
+        data_loading_function=loadArff.load_phoneme,
+        test_path=pathlib.Path('./data/PhonemeSpectra/PhonemeSpectra_TEST.arff'),
+        train_path=pathlib.Path('./data/PhonemeSpectra/PhonemeSpectra_TRAIN.arff'),
+        no_classes=39,
+        input_size=11,
         derivative_order=0,
-        plot_title='Cricket different centers')
+        plot_title='PhonemeSpectra different centers')
 
     perform_tests(
-        data_loading_function=loadArff.load_uwave,
-        test_path=pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TEST.arff'),
-        train_path=pathlib.Path('./data/UWaveGestureLibrary/UWaveGestureLibrary_TRAIN.arff'),
-        no_classes=12,
-        input_size=3,
-        derivative_order=0,
-        plot_title='Uwave different centers')
-
-    perform_tests(
-        data_loading_function=loadArff.load_basic_motions,
-        test_path=pathlib.Path('./data/BasicMotions/BasicMotions_TEST.arff'),
-        train_path=pathlib.Path('./data/BasicMotions/BasicMotions_TRAIN.arff'),
+        data_loading_function=loadArff.load_racket_sports,
+        test_path=pathlib.Path('./data/RacketSports/RacketSports_TEST.arff'),
+        train_path=pathlib.Path('./data/RacketSports/RacketSports_TRAIN.arff'),
         no_classes=4,
         input_size=6,
         derivative_order=0,
-        plot_title='BasicMotions different centers')
+        plot_title='RacketSports different centers')
 
     perform_tests(
-        data_loading_function=loadArff.load_atrial_fibrilation,
-        test_path=pathlib.Path('./data/AtrialFibrillation/AtrialFibrillation_TEST.arff'),
-        train_path=pathlib.Path('./data/AtrialFibrillation/AtrialFibrillation_TRAIN.arff'),
-        no_classes=3,
-        input_size=2,
+        data_loading_function=loadArff.load_self_regulation_scp1,
+        test_path=pathlib.Path('./data/SelfRegulationSCP1/SelfRegulationSCP1_TEST.arff'),
+        train_path=pathlib.Path('./data/SelfRegulationSCP1/SelfRegulationSCP1_TRAIN.arff'),
+        no_classes=2,
+        input_size=6,
         derivative_order=0,
-        plot_title='AtrialFibrillation different centers')
+        plot_title='SelfRegulationSCP1 different centers')
 
+    perform_tests(
+        data_loading_function=loadArff.load_self_regulation_scp2,
+        test_path=pathlib.Path('./data/SelfRegulationSCP2/SelfRegulationSCP2_TEST.arff'),
+        train_path=pathlib.Path('./data/SelfRegulationSCP2/SelfRegulationSCP2_TRAIN.arff'),
+        no_classes=2,
+        input_size=7,
+        derivative_order=0,
+        plot_title='SelfRegulationSCP2 different centers')
+
+    perform_tests(
+        data_loading_function=loadArff.load_spoken_arabic_digits,
+        test_path=pathlib.Path('./data/SpokenArabicDigits/SpokenArabicDigits_TEST.arff'),
+        train_path=pathlib.Path('./data/SpokenArabicDigits/SpokenArabicDigits_TRAIN.arff'),
+        no_classes=10,
+        input_size=13,
+        derivative_order=0,
+        plot_title='SpokenArabicDigits different centers')
+
+    perform_tests(
+        data_loading_function=loadArff.load_stand_walk_jump,
+        test_path=pathlib.Path('./data/StandWalkJump/StandWalkJump_TEST.arff'),
+        train_path=pathlib.Path('./data/StandWalkJump/StandWalkJump_TRAIN.arff'),
+        no_classes=3,
+        input_size=4,
+        derivative_order=0,
+        plot_title='StandWalkJump different centers')

@@ -2,8 +2,6 @@ from sklearn.cluster import KMeans
 import numpy as np
 import warnings
 
-from . import consts
-
 maps = [
     [6, 7, 8],
     [6, 8, 7],
@@ -12,6 +10,12 @@ maps = [
     [8, 6, 7],
     [8, 7, 6]
 ]
+
+def _E(n, k):
+    res = np.zeros(shape=(k, n))
+    for i in range(k, n):
+        res[i-k][i] = 1
+    return res
 
 
 def weights_distance(weights_a, weights_b, n, k):
@@ -61,7 +65,7 @@ def nn_weights_and_start_values(models, m, input_size, extend_size):
     best_model = None
     for model in models:
         cost = weights_distance_old(model.weights, m.weights)
-        cost += sum(consts.E(
+        cost += sum(_E(
                 input_size+extend_size, input_size
             ).dot(model.start_values-m.start_values))
         if cost < best_cost:
@@ -113,7 +117,7 @@ def get_grouping_factor(models, input_size, extend_size, no_clusters):
         if extend_size > 0:
             for i in range(len(models)):
                 vects[i] = np.append(vects[i],
-                                    consts.E(
+                                    _E(
                         input_size+extend_size,
                         input_size
                         ).dot(models[i].start_values).flatten().tolist()
@@ -135,6 +139,3 @@ def get_grouping_factor(models, input_size, extend_size, no_clusters):
         # print(kmeans.labels_)
         # print(classes)
     return sum(kmeans.labels_ == classes)/len(models)
-
-def get_volatility_taxicab(xs):
-    return np.mean(np.abs(np.asarray(xs[:-1])-np.asarray(xs[1:])))

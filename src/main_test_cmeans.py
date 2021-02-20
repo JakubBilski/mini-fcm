@@ -5,10 +5,6 @@ import pathlib
 import os
 import matplotlib.pyplot as plt
 
-from cognitiveMaps import mppiCheckpoints
-from cognitiveMaps import basicComparing
-from cognitiveMaps import rfClassifier
-from cognitiveMaps import svmClassifier
 from cognitiveMaps.mppiCognitiveMap import MppiCognitiveMap
 from transformingData import cmeans
 from transformingData import derivatives
@@ -16,104 +12,14 @@ from transformingData import normalizing
 from transformingData import trajectory_slicing_linear
 from transformingData import trajectory_slicing_sigmoid
 from transformingData import trajectory_slicing_opposite
+from testingResults import accuracyComparing
+from examiningData import basicExamining
 from loadingData import loadArff
 from datetime import datetime
 
 TEST_ONLY_RF = True
 
 plots_dir = pathlib.Path(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}\\')
-
-def compare_solutions(train_models, test_models, test_xs, input_size, no_classes):
-    mistakes = 0
-    if not TEST_ONLY_RF:
-        for test_model in test_models:
-            train_models_without_same = [m for m in train_models if (m.weights != test_model.weights).any()]
-            best_fit, best_cost = basicComparing.nn_weights(train_models_without_same, test_model, input_size, input_size)
-            if best_fit.get_class() != test_model.get_class():
-                good_predictions = [m for m in train_models_without_same if m.get_class()==test_model.get_class()]
-                best_correct_fit, best_correct_cost = basicComparing.nn_weights(good_predictions, test_model, input_size, input_size)
-                mistakes += 1
-            acc = 1-mistakes/len(test_models)
-            print(f"nn_weights accuracy: {len(test_models)-mistakes}/{len(test_models)} ({acc})")
-
-
-    if not TEST_ONLY_RF:
-        if test_xs:
-            mistakes = 0
-            for test_model, xs in zip(test_models, test_xs):
-                train_models_without_same = [m for m in train_models if (m.weights != test_model.weights).any()]
-                best_fit = basicComparing.nn_convergence(train_models_without_same, test_model, xs[0])
-                if best_fit.get_class() != test_model.get_class():
-                    mistakes += 1
-            print(f"nn_convergence accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
-
-    if not TEST_ONLY_RF:
-        mistakes = 0
-        for test_model in test_models:
-            train_models_without_same = [m for m in train_models if (m.weights != test_model.weights).any()]
-            fit_class, _ = basicComparing.best_mse_sum(train_models_without_same, test_model, no_classes)
-            if fit_class != test_model.get_class():
-                mistakes += 1
-        print(f"best_mse_sum accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
-
-    mistakes = 0
-    cfr = rfClassifier.RFClassifier(
-        [tm.weights for tm in train_models],
-        [tm.class_name for tm in train_models]
-        )
-    for test_model in test_models:
-        fit_class = cfr.predict(test_model.weights)
-        if fit_class != test_model.get_class():
-            mistakes += 1
-    # print(f"rfClassifier accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
-    rf_accuracy = 1-mistakes/len(test_models)
-
-    if not TEST_ONLY_RF:
-        mistakes = 0
-        cfr = svmClassifier.SVMClassifier(
-            [tm.weights for tm in train_models],
-            [tm.class_name for tm in train_models]
-            )
-        for test_model in test_models:
-            fit_class = cfr.predict(test_model.weights)
-            if fit_class != test_model.get_class():
-                mistakes += 1
-        # print(f"SVMClassifier accuracy: {len(test_models)-mistakes}/{len(test_models)} ({1-mistakes/len(test_models)})")
-    return rf_accuracy
-
-
-def generate_mppi_checkpoints(derivative_order, no_centers):
-    input_path = pathlib.Path('./data/Cricket/CRICKET_TRAIN.arff')
-    output_path = pathlib.Path(f'./checkpoints/Cricket/mppi/{no_centers}_{derivative_order}/train/')
-    # os.mkdir(output_path)
-    os.mkdir(output_path)
-    xses_series, ys = loadArff.load_cricket(input_path)
-    if derivative_order > 0:
-        xses_series = derivatives.transform(xses_series, derivative_order)
-    centers, xses_series = cmeans.find_centers_and_transform(xses_series, c=no_centers)
-
-    mppiCheckpoints.create_checkpoints(
-        xses_series,
-        ys,
-        output_path,
-        input_size=no_centers,
-        cmeans_centers=centers)
-
-    input_path = pathlib.Path('./data/Cricket/CRICKET_TEST.arff')
-    output_path = pathlib.Path(f'./checkpoints/Cricket/mppi/{no_centers}_{derivative_order}/test/')
-    # os.mkdir(output_path)
-    os.mkdir(output_path)
-    xses_series, ys = loadArff.load_cricket(input_path)
-    if derivative_order > 0:
-        xses_series = derivatives.transform(xses_series, derivative_order)
-    xses_series = cmeans.transform(xses_series, centers=centers)
-
-    mppiCheckpoints.create_checkpoints(
-        xses_series,
-        ys,
-        output_path,
-        input_size=no_centers,
-        cmeans_centers=centers)
 
 
 def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys, no_classes, input_size, plot_title):
@@ -150,7 +56,7 @@ def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys
         mppi.set_class(y)
         test_models.append(mppi)
 
-    bare_rf_accuracy = compare_solutions(
+    bare_rf_accuracy = accuracyComparing.get_accuracy(
         train_models=train_models,
         test_models=test_models,
         test_xs=test_xses_series_transformed,
@@ -158,7 +64,7 @@ def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys
         no_classes=no_classes)
 
     bare_err = sum([mppi.get_error(xs) for mppi, xs in zip(train_models, train_xses_series_transformed)])/len(train_models)
-    bare_volatility = basicComparing.get_volatility_taxicab(xs)
+    bare_volatility = basicExamining.get_volatility_taxicab(xs)
 
     mins = np.asarray(mins)
     maxs = np.asarray(maxs)
@@ -220,7 +126,7 @@ def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys
                 mppi.set_class(y)
                 test_models.append(mppi)
 
-            rf_accuracy = compare_solutions(
+            rf_accuracy = accuracyComparing.get_accuracy(
                 train_models=train_models,
                 test_models=test_models,
                 test_xs=test_xses_series_transformed,
@@ -229,7 +135,7 @@ def test_different_cmeans(test_xses_series, test_ys, train_xses_series, train_ys
 
             err = sum([mppi.get_error(xs) for mppi, xs in zip(train_models, train_xses_series_transformed)])/len(train_models)
             # print(f'Prediction error: {err}')
-            volatility = basicComparing.get_volatility_taxicab(xs)
+            volatility = basicExamining.get_volatility_taxicab(xs)
 
             plot_xs.append(err)
             plot_ys.append(rf_accuracy)
@@ -438,14 +344,14 @@ if __name__ == "__main__":
     # #     derivative_order=0,
     # #     plot_title='PenDigits different centers')
 
-    perform_tests(
-        data_loading_function=loadArff.load_phoneme,
-        test_path=pathlib.Path('./data/PhonemeSpectra/PhonemeSpectra_TEST.arff'),
-        train_path=pathlib.Path('./data/PhonemeSpectra/PhonemeSpectra_TRAIN.arff'),
-        no_classes=39,
-        input_size=11,
-        derivative_order=0,
-        plot_title='PhonemeSpectra different centers')
+    # perform_tests(
+    #     data_loading_function=loadArff.load_phoneme,
+    #     test_path=pathlib.Path('./data/PhonemeSpectra/PhonemeSpectra_TEST.arff'),
+    #     train_path=pathlib.Path('./data/PhonemeSpectra/PhonemeSpectra_TRAIN.arff'),
+    #     no_classes=39,
+    #     input_size=11,
+    #     derivative_order=0,
+    #     plot_title='PhonemeSpectra different centers')
 
     perform_tests(
         data_loading_function=loadArff.load_racket_sports,

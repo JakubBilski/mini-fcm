@@ -4,6 +4,7 @@ import numpy as np
 import pathlib
 import os
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 from cognitiveMaps.mppiCognitiveMap import MppiCognitiveMap
 from transformingData import cmeans
@@ -15,7 +16,6 @@ from transformingData import trajectory_slicing_opposite
 from testingResults import accuracyComparing
 from examiningData import basicExamining
 from loadingData import loadArff
-from datetime import datetime
 
 TEST_ONLY_RF = True
 

@@ -58,4 +58,18 @@ def get_accuracy(train_models, test_models, test_xs, input_size, no_classes, cla
                 mistakes += 1
         return 1-mistakes/len(test_models)
 
+    if classification_method == "best_prediction":
+        mistakes = 0
+        for test_model, xs in zip(test_models, test_xs):
+            fit_class = train_models[0].get_class()
+            best_prediction_err = train_models[0].get_error(xs)
+            for train_model in train_models[1:]:
+                prediction_err = train_model.get_error(xs)
+                if prediction_err < best_prediction_err:
+                    fit_class = train_model.get_class()
+                    best_prediction_err = prediction_err
+            if fit_class != test_model.get_class():
+                mistakes += 1
+        return 1-mistakes/len(test_models)
+
     raise Exception(f"Classification method {classification_method} not recognized")

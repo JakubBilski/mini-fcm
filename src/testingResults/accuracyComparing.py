@@ -73,3 +73,21 @@ def get_accuracy(train_models, test_models, test_xs, input_size, no_classes, cla
         return 1-mistakes/len(test_models)
 
     raise Exception(f"Classification method {classification_method} not recognized")
+
+
+def get_accuracy_hmm(train_models, test_xs, test_classes, input_size, no_classes, classification_method="best_prediction"):
+    if classification_method == "best_prediction":
+        mistakes = 0
+        for test_class, xs in zip(test_classes, test_xs):
+            fit_class = train_models[0].get_class()
+            best_emission_prob = train_models[0].get_emission_probability(xs)
+            for train_model in train_models[1:]:
+                emission_prob = train_model.get_emission_probability(xs)
+                if emission_prob > best_emission_prob:
+                    fit_class = train_model.get_class()
+                    best_emission_prob = emission_prob
+            if fit_class != test_class:
+                mistakes += 1
+        return 1-mistakes/len(test_classes)
+
+    raise Exception(f"Classification method {classification_method} not recognized")

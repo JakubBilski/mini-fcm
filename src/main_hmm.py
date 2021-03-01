@@ -65,19 +65,30 @@ def test_hmm_against_fcm(test_xses_series, test_ys, train_xses_series, train_ys,
 
         hmm_train_models = []
 
+        training_failed = False
         for xs, y in zip(train_xses_series, train_ys):
             hmm = HMM(no_centers)
-            hmm.train(xs)
+            try:
+                hmm.train(xs)
+            except:
+                training_failed = True
+                break
             hmm.set_class(y)
             hmm_train_models.append(hmm)
 
-        hmm_accuracy = accuracyComparing.get_accuracy_hmm(
-            train_models=hmm_train_models,
-            test_xs=test_xses_series,
-            test_classes=test_ys,
-            input_size=no_centers,
-            no_classes=no_classes
-        )
+        if training_failed:
+            hmm_accuracy = 0
+        else:
+            try:
+                hmm_accuracy = accuracyComparing.get_accuracy_hmm(
+                    train_models=hmm_train_models,
+                    test_xs=test_xses_series,
+                    test_classes=test_ys,
+                    input_size=no_centers,
+                    no_classes=no_classes
+                )
+            except:
+                hmm_accuracy = 0
 
         mainplot_xs.append(no_centers)
         mainplot_fcm.append(fcm_accuracy)

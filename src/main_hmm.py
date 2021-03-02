@@ -31,7 +31,13 @@ def test_hmm_against_fcm(test_xses_series, test_ys, train_xses_series, train_ys,
     mins = np.asarray(mins)
     maxs = np.asarray(maxs)
 
-    for no_centers in tqdm(range(3, 15)):
+    keep_training_hmms = True
+
+    for no_centers in tqdm(range(2, 15)):
+
+        if no_centers > 8:
+            keep_training_hmms = False
+
         fcm_centers, train_xses_series_transformed = cmeans.find_centers_and_transform(
             xses_series=train_xses_series,
             c=no_centers)
@@ -63,40 +69,39 @@ def test_hmm_against_fcm(test_xses_series, test_ys, train_xses_series, train_ys,
             input_size=no_centers,
             no_classes=no_classes)
 
-        hmm_train_models = []
+        if keep_training_hmms:
+            hmm_train_models = []
 
-        training_failed = False
-        for xs, y in zip(train_xses_series, train_ys):
-            hmm = HMM(no_centers)
-            try:
-                hmm.train(xs)
-            except:
-                training_failed = True
-                break
-            hmm.set_class(y)
-            hmm_train_models.append(hmm)
+            for xs, y in zip(train_xses_series, train_ys):
+                hmm = HMM(no_centers)
+                try:
+                    hmm.train(xs, 100)
+                except:
+                    keep_training_hmms = False
+                    break
+                hmm.set_class(y)
+                hmm_train_models.append(hmm)
 
-        if training_failed:
-            hmm_accuracy = 0
-        else:
-            try:
-                hmm_accuracy = accuracyComparing.get_accuracy_hmm(
-                    train_models=hmm_train_models,
-                    test_xs=test_xses_series,
-                    test_classes=test_ys,
-                    input_size=no_centers,
-                    no_classes=no_classes
-                )
-            except:
-                hmm_accuracy = 0
+            if keep_training_hmms:
+                try:
+                    hmm_accuracy = accuracyComparing.get_accuracy_hmm(
+                        train_models=hmm_train_models,
+                        test_xs=test_xses_series,
+                        test_classes=test_ys,
+                        input_size=no_centers,
+                        no_classes=no_classes
+                    )
+                except:
+                    keep_training_hmms = False
 
         mainplot_xs.append(no_centers)
         mainplot_fcm.append(fcm_accuracy)
-        mainplot_hmm.append(hmm_accuracy)
+        if keep_training_hmms:
+            mainplot_hmm.append(hmm_accuracy)
 
     fig, ax = plt.subplots()
     ax.plot(mainplot_xs, mainplot_fcm, color='red', label='fcm (centroids) random forest')
-    ax.plot(mainplot_xs, mainplot_hmm, color='blue', label='hmm best prediction')
+    ax.plot(mainplot_xs[:len(mainplot_hmm)], mainplot_hmm, color='blue', label='hmm best prediction')
     ax.set(xlabel='# centers / # states', ylabel='classification accuracy', title=f'{plot_title}')
     ax.grid()
     ax.legend()
@@ -124,14 +129,14 @@ if __name__ == "__main__":
 
     os.mkdir(plots_dir)
 
-    # perform_tests(
-    #     data_loading_function=loadArff.load_articulary_word_recognition,
-    #     test_path=pathlib.Path('./data/ArticularyWordRecognition/ArticularyWordRecognition_TEST.arff'),
-    #     train_path=pathlib.Path('./data/ArticularyWordRecognition/ArticularyWordRecognition_TRAIN.arff'),
-    #     no_classes=25,
-    #     input_size=9,
-    #     derivative_order=0,
-    #     plot_title='ArticularyWordRecognition fcm vs hmm classification')
+    perform_tests(
+        data_loading_function=loadArff.load_articulary_word_recognition,
+        test_path=pathlib.Path('./data/ArticularyWordRecognition/ArticularyWordRecognition_TEST.arff'),
+        train_path=pathlib.Path('./data/ArticularyWordRecognition/ArticularyWordRecognition_TRAIN.arff'),
+        no_classes=25,
+        input_size=9,
+        derivative_order=0,
+        plot_title='ArticularyWordRecognition fcm vs hmm classification')
 
     perform_tests(
         data_loading_function=loadArff.load_cricket,

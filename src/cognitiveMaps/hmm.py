@@ -35,6 +35,7 @@ class HMM:
         warnings.resetwarnings()
         if len(models_with_scores) == 0:
             raise Exception("Unable to learn a valid model")
+        # print(sorted([s for m, s in models_with_scores]))
         self.model = max(models_with_scores, key=lambda ms: ms[1])[0]
 
     def get_emission_probability(self, input_in_time):

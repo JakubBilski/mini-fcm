@@ -109,14 +109,14 @@ def test_hmm(
     csv_writer.writerow([dataset_name, no_classes])
     csv_writer.writerow(['no_states', 'accuracy'])
 
-    for no_states in tqdm(range(2, 3)):
+    for no_states in tqdm(range(2, 4)):
         hmm_train_models = []
         hmm_error_occured = False
 
         for xs, y in zip(train_xses_series, train_ys):
             hmm = HMM(no_states)
             try:
-                hmm.train(xs, 10)
+                hmm.train(xs, 100)
             except:
                 hmm_error_occured = True
                 break
@@ -201,8 +201,8 @@ if __name__ == "__main__":
 
     os.mkdir(plots_dir)
 
-    testing_fcm = True
-    testing_hmm = False
+    testing_fcm = False
+    testing_hmm = True
 
     datasets = [
         ('ACSF1', 10),

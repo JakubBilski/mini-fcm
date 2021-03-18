@@ -117,7 +117,10 @@ def test_fcm(
 
     fig, ax = plt.subplots()
     ax.plot(mainplot_xs, accuracyplot_ys, color='blue')
-    ax.set(xlabel='tau', ylabel='classification accuracy', title=f'{dataset_name} decm m {m}')
+    ax.set(
+        xlabel='L',
+        ylabel='classification accuracy',
+        title=f'{dataset_name} decm m {m}, {no_centers} centers')
     ax.grid()
     ax2 = ax.twinx()
     ax2.plot(mainplot_xs, decencyplot_ys, color='red')
@@ -128,7 +131,10 @@ def test_fcm(
 
     fig, ax = plt.subplots()
     ax.plot(mainplot_xs, errorplot_ys, color='blue')
-    ax.set(xlabel='tau', ylabel='error', title=f'{dataset_name} mean map prediction error')
+    ax.set(
+        xlabel='L',
+        ylabel='prediction error',
+        title=f'{dataset_name} decm m {m}, {no_centers} centers')
     ax.grid()
     ax2 = ax.twinx()
     ax2.plot(mainplot_xs, decencyplot_ys, color='red')
@@ -144,8 +150,8 @@ def get_models_indecency(models):
     threshold = 1-1e-3
     no_degenerated_weights = 0
     for model in models:
-        no_degenerated_weights += np.sum(np.where(model.weights >= threshold))
-        no_degenerated_weights += np.sum(np.where(model.weights <= -threshold))
+        no_degenerated_weights += np.sum(model.weights >= threshold)
+        no_degenerated_weights += np.sum(model.weights <= -threshold)
     return no_degenerated_weights/(models[0].n*models[0].n*len(models))
 
 

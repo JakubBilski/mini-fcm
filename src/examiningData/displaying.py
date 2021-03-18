@@ -68,7 +68,7 @@ def display_series_with_markers(xses_series, plot_path, main_title, markers):
     plot_xs = [x[0] for xs in xses_series for x in xs]
     plot_ys = [x[1] for xs in xses_series for x in xs]
     axs[0,1].scatter(plot_xs, plot_ys, color='blue', s=1)
-    axs[0,1].scatter(marker_xs, marker_ys, color='red', s=10)
+    axs[0,1].scatter(marker_xs, marker_ys, color='red', s=10, zorder=10)
     axs[0,1].set(xlabel='x[0]', ylabel='x[1]', title=f'all data points with cmeans centers')
 
     plot_xs = [x[0] for x in xses_series[0]]
@@ -89,7 +89,7 @@ def display_series_with_markers(xses_series, plot_path, main_title, markers):
     plot_xs = [x[0] for x in xses_series[0]]
     plot_ys = [x[1] for x in xses_series[0]]
     axs[1,1].plot(plot_xs, plot_ys, color='blue')
-    axs[1,1].scatter(marker_xs, marker_ys, color='red', s=10)
+    axs[1,1].scatter(marker_xs, marker_ys, color='red', s=10, zorder=10)
     axs[1,1].set(
         xlabel='x[0]',
         ylabel='x[1]',

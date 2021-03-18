@@ -48,6 +48,7 @@ def test_fcm(
     mainplot_xs = []
     accuracyplot_ys = []
     errorplot_ys = []
+    decencyplot_ys = []
 
     centers, train_xses_series_transformed = cmeans.find_centers_and_transform(
         xses_series=train_xses_series,
@@ -65,7 +66,7 @@ def test_fcm(
 
     for L in ls:
         baseCognitiveMap.SIGMOID_L = L
-        print(f'L={L}')
+        print(f'\nL={L}')
         print(f'transforming with cmeans')
 
         mean_error = 0
@@ -82,16 +83,17 @@ def test_fcm(
 
         test_models = []
 
-        print(f'learning test')
         for xs, y in tqdm(zip(test_xses_series_transformed, test_ys)):
             model = DECognitiveMap(no_centers)
-            model.train(xs)
-            # print(mppi.weights)
             model.set_class(y)
             test_models.append(model)
-            mean_error+=model.get_error(xs)
         
-        mean_error /= (len(test_models) + len(train_models))
+        mean_error /= (len(train_models))
+        indecency = get_models_indecency(train_models)
+
+        print("share of degenerated weights")
+        print(indecency)
+
 
         print("Example model:")
         print(train_models[0].weights)
@@ -110,12 +112,17 @@ def test_fcm(
         mainplot_xs.append(L)
         accuracyplot_ys.append(accuracy)
         errorplot_ys.append(mean_error)
+        decencyplot_ys.append(indecency)
         csv_writer.writerow([m, L, accuracy])
 
     fig, ax = plt.subplots()
     ax.plot(mainplot_xs, accuracyplot_ys, color='blue')
     ax.set(xlabel='tau', ylabel='classification accuracy', title=f'{dataset_name} decm m {m}')
     ax.grid()
+    ax2 = ax.twinx()
+    ax2.plot(mainplot_xs, decencyplot_ys, color='red')
+    ax2.set(ylabel='share of degenerated weights')
+
     plt.savefig(plots_dir / f'{dataset_name} accuracy.png')
     plt.close()
 
@@ -123,10 +130,23 @@ def test_fcm(
     ax.plot(mainplot_xs, errorplot_ys, color='blue')
     ax.set(xlabel='tau', ylabel='error', title=f'{dataset_name} mean map prediction error')
     ax.grid()
+    ax2 = ax.twinx()
+    ax2.plot(mainplot_xs, decencyplot_ys, color='red')
+    ax2.set(ylabel='share of degenerated weights')
+
     plt.savefig(plots_dir / f'{dataset_name} error.png')
     plt.close()
 
     csv_results_file.close()
+
+
+def get_models_indecency(models):
+    threshold = 1-1e-3
+    no_degenerated_weights = 0
+    for model in models:
+        no_degenerated_weights += np.sum(np.where(model.weights >= threshold))
+        no_degenerated_weights += np.sum(np.where(model.weights <= -threshold))
+    return no_degenerated_weights/(models[0].n*models[0].n*len(models))
 
 
 def perform_tests(

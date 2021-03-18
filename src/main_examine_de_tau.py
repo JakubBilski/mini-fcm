@@ -72,11 +72,8 @@ def test_fcm(
 
         test_models = []
 
-        print(f'learning test')
         for xs, y in tqdm(zip(test_xses_series_transformed, test_ys)):
             model = DECognitiveMap(no_centers)
-            model.train(xs)
-            # print(mppi.weights)
             model.set_class(y)
             test_models.append(model)
 

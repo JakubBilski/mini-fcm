@@ -7,6 +7,7 @@ import csv
 import matplotlib.pyplot as plt
 from datetime import datetime
 
+from cognitiveMaps.deCognitiveMap import DECognitiveMap
 from cognitiveMaps.mppiCognitiveMap import MppiCognitiveMap
 from cognitiveMaps.hmm import HMM
 from transformingData import cmeans
@@ -14,6 +15,7 @@ from transformingData import derivatives
 from transformingData import normalizing
 from testingResults import accuracyComparing
 from loadingData import loadSktime
+from examiningData import displaying
 
 plots_dir = pathlib.Path(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}\\')
 
@@ -31,7 +33,7 @@ def test_fcm(
 
     print(f"{dataset_name}")
 
-    ms = [1.25, 1.5, 2.0, 4.0, 8.0, 16.0]
+    ms = [2.0]
 
     csv_results_file = open(csv_results_path, 'w', newline='')
     csv_writer = csv.writer(csv_results_file)
@@ -40,34 +42,45 @@ def test_fcm(
     csv_writer.writerow(['m', 'no_centers', 'accuracy', 'centers'])
 
     for m in ms:
+        print(f'm={m}')
         mainplot_xs = []
         mainplot_ys = []
-        for no_centers in tqdm(range(2, 20)):
+        for no_centers in range(2, 4):
+            print(f'\nno_centers={no_centers}')
+            print(f'transforming with cmeans')
+
             centers, train_xses_series_transformed = cmeans.find_centers_and_transform(
                 xses_series=train_xses_series,
                 c=no_centers,
                 m=m)
-            
-            train_models = []
-
-            for xs, y in zip(train_xses_series_transformed, train_ys):
-                mppi = MppiCognitiveMap(no_centers)
-                mppi.train(xs)
-                mppi.set_class(y)
-                train_models.append(mppi)
         
             test_xses_series_transformed = cmeans.transform(
                 xses_series=test_xses_series,
                 centers=centers)
 
+            train_models = []
+
+            print(f'learning train')
+            for xs, y in tqdm(zip(train_xses_series_transformed, train_ys)):
+                model = DECognitiveMap(no_centers)
+                model.train(xs)
+                model.set_class(y)
+                train_models.append(model)
+
             test_models = []
 
-            for xs, y in zip(test_xses_series_transformed, test_ys):
-                mppi = MppiCognitiveMap(no_centers)
-                mppi.train(xs)
-                mppi.set_class(y)
-                test_models.append(mppi)
-            
+            print(f'learning test')
+            for xs, y in tqdm(zip(test_xses_series_transformed, test_ys)):
+                model = DECognitiveMap(no_centers)
+                model.train(xs)
+                # print(mppi.weights)
+                model.set_class(y)
+                test_models.append(model)
+
+            print("Example model:")
+            print(train_models[0].weights)
+
+            print(f'classifying with best_prediction')
             accuracy = accuracyComparing.get_accuracy(
                 train_models=train_models,
                 test_models=test_models,
@@ -75,16 +88,17 @@ def test_fcm(
                 input_size=no_centers,
                 no_classes=no_classes,
                 classification_method="best_prediction")
+            print(f'accuracy: {accuracy}')            
 
             mainplot_xs.append(no_centers)
             mainplot_ys.append(accuracy)
             csv_writer.writerow([m, no_centers, accuracy] + centers)
 
         fig, ax = plt.subplots()
-        ax.plot(mainplot_xs, mainplot_ys, color='red')
-        ax.set(xlabel='# centers', ylabel='classification accuracy', title=f'{dataset_name} fcm m {m}')
+        ax.plot(mainplot_xs, mainplot_ys, color='blue')
+        ax.set(xlabel='# centers', ylabel='classification accuracy', title=f'{dataset_name} decm m {m}')
         ax.grid()
-        plt.savefig(plots_dir / f'{dataset_name} fcm m {m}.png')
+        plt.savefig(plots_dir / f'{dataset_name} decm m {m}.png')
         plt.close()
 
     csv_results_file.close()
@@ -175,6 +189,11 @@ def perform_tests(
     test_xses_series = normalizing.transform(test_xses_series, mins, maxs)
     train_xses_series = normalizing.transform(train_xses_series, mins, maxs)
 
+    displaying.display_series(
+        train_xses_series,
+        plots_dir / f'{dataset_name} visualization.png',
+        f'{dataset_name} visualization')
+
     if testing_fcm:
         test_fcm(
             test_xses_series,
@@ -201,8 +220,8 @@ if __name__ == "__main__":
 
     os.mkdir(plots_dir)
 
-    testing_fcm = False
-    testing_hmm = True
+    testing_fcm = True
+    testing_hmm = False
 
     datasets = [
         ('ACSF1', 10),
@@ -324,6 +343,8 @@ if __name__ == "__main__":
         ('WormsTwoClass', 2),
         ('Yoga', 2),
     ]
+
+    datasets = [datasets[1]]
 
     for dataset_name, no_classes in datasets:
         perform_tests(

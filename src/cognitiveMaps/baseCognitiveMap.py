@@ -10,11 +10,11 @@ class BaseCognitiveMap:
         self.conv_pnt = None
 
     def f(x):
-        return 1 / (1 + np.exp(-x))
+        return 1 / (1 + np.exp(-5*x))
 
     def fprim(x):
         pom = BaseCognitiveMap.f(x)
-        return pom*(1-pom)
+        return 5*pom*(1-pom)
 
     def get_convergence_point(self, input_data, max_iterations=100):
         if self.conv_pnt is None:

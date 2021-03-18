@@ -21,9 +21,8 @@ class MppiCognitiveMap(BaseCognitiveMap):
     def get_error(self, input_in_time):
         expected_output = input_in_time[1:]
         expected_input = input_in_time[:-1]
-        error = 0
-        for i in range(len(expected_input)-1):
-            result = MppiCognitiveMap.f(self.weights.dot(expected_input[i]))
-            result -= expected_output[i]
-            error += result.dot(np.transpose(result))
+        expected_output = np.array(expected_output).transpose()
+        expected_input = np.array(expected_input).transpose()
+        error = MppiCognitiveMap.f(self.weights.dot(expected_input)) - expected_output
+        error = np.mean(np.multiply(error, error))
         return error/(len(expected_input)*self.n)

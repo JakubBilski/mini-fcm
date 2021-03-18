@@ -5,7 +5,7 @@ from scipy.optimize import differential_evolution
 
 
 class DECognitiveMap(BaseCognitiveMap):
-    def __init__(self, n, borders):
+    def __init__(self, n):
         self.class_name = ""
         self.weights = np.random.rand(n, n)
         self.n = n

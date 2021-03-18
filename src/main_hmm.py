@@ -45,7 +45,7 @@ def test_fcm(
         print(f'm={m}')
         mainplot_xs = []
         mainplot_ys = []
-        for no_centers in range(2, 4):
+        for no_centers in range(2, 11):
             print(f'\nno_centers={no_centers}')
             print(f'transforming with cmeans')
 
@@ -343,8 +343,6 @@ if __name__ == "__main__":
         ('WormsTwoClass', 2),
         ('Yoga', 2),
     ]
-
-    datasets = [datasets[1]]
 
     for dataset_name, no_classes in datasets:
         perform_tests(

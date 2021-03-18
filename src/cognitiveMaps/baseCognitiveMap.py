@@ -2,6 +2,9 @@ import numpy as np
 
 from . import displaying
 
+SIGMOID_L = 1.0
+SIGMOID_TAU = 5.0
+
 
 class BaseCognitiveMap:
     def __init__(self, weights=None):
@@ -10,11 +13,11 @@ class BaseCognitiveMap:
         self.conv_pnt = None
 
     def f(x):
-        return 1 / (1 + np.exp(-5*x))
+        return SIGMOID_L / (1 + np.exp(-SIGMOID_TAU*x))
 
     def fprim(x):
         pom = BaseCognitiveMap.f(x)
-        return 5*pom*(1-pom)
+        return SIGMOID_TAU*pom*(SIGMOID_L-pom)
 
     def get_convergence_point(self, input_data, max_iterations=100):
         if self.conv_pnt is None:

@@ -91,3 +91,20 @@ def get_accuracy_hmm(train_models, test_xs, test_classes, input_size, no_classes
         return 1-mistakes/len(test_classes)
 
     raise Exception(f"Classification method {classification_method} not recognized")
+
+def get_accuracy_best_prediction_multicenter(train_models_by_ys, test_models, test_xs_by_ys):
+    mistakes = 0
+    for i in range(len(test_models)):
+        fit_class = None
+        best_prediction_err = 100000000
+        for y in range(len(train_models_by_ys)):
+            test_xs = test_xs_by_ys[y][i]
+            for train_model in train_models_by_ys[y]:
+                prediction_err = train_model.get_error(test_xs)
+                if prediction_err < best_prediction_err:
+                    fit_class = y
+                    best_prediction_err = prediction_err
+        if fit_class != test_models[i].get_class():
+            mistakes += 1
+
+    return 1-mistakes/len(test_models)

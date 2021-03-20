@@ -55,4 +55,4 @@ class HMM:
         return self.class_name
     
     def get_gauss_means(self):
-        return self.model.means_
+        return self.model.means_.tolist()

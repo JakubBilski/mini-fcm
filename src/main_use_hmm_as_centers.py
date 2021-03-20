@@ -122,18 +122,11 @@ def create_hmms_for_classes(
     return hmm_by_ys
 
 
-def launch(
+def load_all_data(
     data_loading_function,
     test_path,
     train_path,
-    no_classes,
-    derivative_order,
-    dataset_name,
-    csv_results_path,
-    no_centers):
-
-    print(f"{dataset_name}")
-    print(f"no_centers: {no_centers}")
+    derivative_order):
 
     print("Loading data")
     test_xses_series, test_ys = data_loading_function(test_path)
@@ -147,6 +140,22 @@ def launch(
     test_xses_series = normalizing.transform(test_xses_series, mins, maxs)
     train_xses_series = normalizing.transform(train_xses_series, mins, maxs)
 
+    return train_xses_series, train_ys, test_xses_series, test_ys
+
+
+def generate_centers(
+    train_xses_series,
+    train_ys,
+    no_classes,
+    dataset_name,
+    csv_results_path,
+    no_centers):
+
+    print("Learning centers with cmeans")
+    centers, transformed_train_xses_series = cmeans.find_centers_and_transform(train_xses_series, no_centers)
+    subtitles = [f'class {y}' for y in range(no_classes)]
+    subtitles.append('cmeans')
+
     print("Learning hmms")
     hmms = create_hmms_for_classes(
         train_xses_series,
@@ -156,11 +165,6 @@ def launch(
         no_centers
     )
     hmm_centers = [hmm.get_gauss_means() for hmm in hmms]
-
-    print("Learning centers with cmeans")
-    centers, transformed_train_xses_series = cmeans.find_centers_and_transform(train_xses_series, no_centers)
-    subtitles = [f'class {y}' for y in range(no_classes)]
-    subtitles.append('cmeans')
 
     print("Printing results")
     displaying.display_series_with_different_markers(
@@ -172,17 +176,86 @@ def launch(
     )
 
     csv_results_file = open(csv_results_path, 'w', newline='')
-    csv_writer = csv.writer(csv_results_file)
+    csv_writer = csv.writer(csv_results_file, delimiter=';')
     csv_writer.writerow(['dataset', 'no_classes', 'no_centers'])
     csv_writer.writerow([dataset_name, no_classes, no_centers])
     csv_writer.writerow(['y', 'centers'])
 
     for y in range(no_classes):
-        to_write = [f'hmm {y}']
+        to_write = [f'hmm_{y}']
         to_write.extend(str(centers) for centers in hmm_centers[y])
         csv_writer.writerow(to_write)
     csv_writer.writerow(["cmeans"] + centers)
     csv_results_file.close()
+
+
+def use_centers(
+    train_xses_series,
+    train_ys,
+    test_xses_series,
+    test_ys,
+    csv_path):
+
+    print("Reading csv")
+    csv_file = open(csv_path, newline='')
+    reader = csv.reader(csv_file, delimiter=';', quotechar='|')
+    lines = [line for line in reader]
+    dataset_name = lines[1][0]
+    no_classes = int(lines[1][1])
+    no_centers = int(lines[1][2])
+
+    centers_by_ys = [[] for _ in range(no_classes)]
+
+    for row in lines[3:]:
+        class_no = row[0]
+        if class_no == 'cmeans':
+            continue
+        class_no = int(class_no[4:])
+        for i in range(no_centers):
+            casted_to_list = [float(x) for x in row[i+1][1:-1].split(', ')]
+            centers_by_ys[class_no].append(casted_to_list)
+
+    train_xses_series_by_ys = [[] for y in range(no_classes)]
+
+    for xs, y in zip(train_xses_series, train_ys):
+        train_xses_series_by_ys[int(y)].append(xs)
+
+
+    print("Transforming train xses according to their class")
+    transformed_train_xses_series_by_ys = [[] for y in range(no_classes)]
+    for y in range(no_classes):
+        transformed_train_xses_series_by_ys[y] = cmeans.transform(train_xses_series_by_ys[y], centers_by_ys[y])
+    
+    print(f'Learning train models')
+    train_models_by_ys = [[] for y in range(no_classes)]
+    for y in tqdm(range(no_classes)):
+        for xs in transformed_train_xses_series_by_ys[y]:
+            model = DECognitiveMap(no_centers)
+            model.train(xs)
+            model.set_class(y)
+            train_models_by_ys[y].append(model)
+    
+    test_models = []
+
+    for y in test_ys:
+        model = DECognitiveMap(no_centers)
+        model.set_class(y)
+        test_models.append(model)
+    
+    print("Example model:")
+    print(train_models_by_ys[0][0].weights)
+
+    print("Transforming test ys to all classes' centers")
+    transformed_test_xses_series_by_ys = [[] for y in range(no_classes)]
+    for y in range(no_classes):
+        transformed_test_xses_series_by_ys[y] = cmeans.transform(test_xses_series, centers_by_ys[y])
+
+    print(f'classifying with best_prediction')
+    accuracy = accuracyComparing.get_accuracy_best_prediction_multicenter(
+        train_models_by_ys=train_models_by_ys,
+        test_models=test_models,
+        test_xs_by_ys=transformed_test_xses_series_by_ys)
+    print(f'accuracy: {accuracy}')
 
 
 if __name__ == "__main__":
@@ -309,15 +382,34 @@ if __name__ == "__main__":
         ('WormsTwoClass', 2),
         ('Yoga', 2),
     ]
+    datasets = [datasets[2]]
+
+    no_centers = 2
+    mode_generate = False
 
     for dataset_name, no_classes in datasets:
-        launch(
+        csv_path = f'plots\\picked\\centers_generated_with_hmm\\{dataset_name}_2_hmm_centers.csv'
+
+        print(f"{dataset_name}")
+        print(f"no_centers: {no_centers}")
+        train_xses_series, train_ys, test_xses_series, test_ys = load_all_data(
             data_loading_function=loadSktime.load_sktime,
             test_path=pathlib.Path(f'./data/Univariate/{dataset_name}/{dataset_name}_TEST.ts'),
             train_path=pathlib.Path(f'./data/Univariate/{dataset_name}/{dataset_name}_TRAIN.ts'),
-            no_classes=no_classes,
-            derivative_order=1,
-            dataset_name=dataset_name,
-            csv_results_path=plots_dir / f'{dataset_name}_hmm_centers.csv',
-            no_centers=5)
+            derivative_order=1)
+        if mode_generate:
+            generate_centers(
+                train_xses_series=train_xses_series,
+                train_ys=train_ys,
+                no_classes=no_classes,
+                dataset_name=dataset_name,
+                csv_results_path=csv_path,
+                no_centers=no_centers)
+        else:
+            use_centers(
+                train_xses_series=train_xses_series,
+                train_ys=train_ys,
+                test_xses_series=test_xses_series,
+                test_ys=test_ys,
+                csv_path=csv_path)
 

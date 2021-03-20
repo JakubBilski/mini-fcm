@@ -7,7 +7,9 @@ class HMM:
         self.class_name = ""
         self.n = n
 
-    def train(self, input_in_time, no_random_initializations):
+    def train(self, inputs_in_time, no_random_initializations):
+        concatenated_inputs = np.concatenate(inputs_in_time)
+        lengths = [len(x) for x in inputs_in_time]
         warnings.filterwarnings(action='ignore', category=RuntimeWarning)
         models_with_scores = []
         for i in range(no_random_initializations):
@@ -15,20 +17,22 @@ class HMM:
             random_transmat = np.random.rand(self.n, self.n)
             random_transmat = random_transmat / random_transmat.sum(1, keepdims=True)
             new_model.transmat_ = random_transmat
-            new_model.means_ = np.random.rand(self.n, len(input_in_time[0]))
+            new_model.means_ = np.random.rand(self.n, len(concatenated_inputs[0]))
             random_startprob = np.random.rand(self.n)
             random_startprob = random_startprob / random_startprob.sum(0, keepdims=True)
             new_model.startprob_ = random_startprob
             random_covars = np.array([
-                np.random.rand(len(input_in_time[0])) for _ in range(self.n)
+                np.random.rand(len(concatenated_inputs[0])) for _ in range(self.n)
             ])
             new_model.covars_ = random_covars
-            new_model.fit(input_in_time)
+            new_model.fit(concatenated_inputs, lengths)
             # sometimes, despite converging, the model will be invalid
             # and it will hopefully raise an error during score()
             if new_model.monitor_.converged:
                 try:
-                    score = new_model.score(input_in_time)
+                    score = 0
+                    for x in inputs_in_time:
+                        score += new_model.score(x)
                     models_with_scores.append((new_model, score))
                 except:
                     pass
@@ -49,3 +53,6 @@ class HMM:
 
     def get_class(self):
         return self.class_name
+    
+    def get_gauss_means(self):
+        return self.model.means_

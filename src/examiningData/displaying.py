@@ -104,7 +104,8 @@ def display_series_with_different_markers(xses_series, plot_path, main_title, su
         print("Unable to visualize data with dimension other than 2")
         return
 
-    width = 5
+    width = max(min(len(sub_titles)//2, 5),1)
+
     height = (len(sub_titles) - 1) // width + 1
     fig, axs = plt.subplots(height, width)
     fig.set_size_inches(width*4.0, height*4.0)

@@ -382,13 +382,12 @@ if __name__ == "__main__":
         ('WormsTwoClass', 2),
         ('Yoga', 2),
     ]
-    datasets = [datasets[2]]
 
-    no_centers = 2
-    mode_generate = False
+    no_centers = 5
+    mode_generate = True
 
     for dataset_name, no_classes in datasets:
-        csv_path = f'plots\\picked\\centers_generated_with_hmm\\{dataset_name}_2_hmm_centers.csv'
+        csv_path = f'plots\\picked\\centers_generated_with_hmm\\{dataset_name}_5_hmm_centers.csv'
 
         print(f"{dataset_name}")
         print(f"no_centers: {no_centers}")

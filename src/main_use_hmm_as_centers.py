@@ -116,7 +116,7 @@ def create_hmms_for_classes(
     hmm_by_ys = [HMM(no_states) for _ in range(no_classes)]
 
     for y in tqdm(range(no_classes)):
-        hmm_by_ys[y].train(train_xses_series_by_ys[y], 100)
+        hmm_by_ys[y].train(train_xses_series_by_ys[y], 5)
         hmm_by_ys[y].set_class(y)
 
     return hmm_by_ys
@@ -264,7 +264,7 @@ if __name__ == "__main__":
 
     datasets = [
         ('ACSF1', 10),
-        ('Adiac', 36),
+        ('Adiac', 37),
         ('ArrowHead', 3),
         ('Beef', 5),
         ('BeetleFly', 2),
@@ -383,11 +383,11 @@ if __name__ == "__main__":
         ('Yoga', 2),
     ]
 
-    no_centers = 5
+    no_centers = 2
     mode_generate = True
 
     for dataset_name, no_classes in datasets:
-        csv_path = f'plots\\picked\\centers_generated_with_hmm\\{dataset_name}_5_hmm_centers.csv'
+        csv_path = f'plots\\picked\\centers_generated_with_hmm\\{dataset_name}_2_hmm_centers.csv'
 
         print(f"{dataset_name}")
         print(f"no_centers: {no_centers}")

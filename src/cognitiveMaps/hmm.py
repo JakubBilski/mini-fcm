@@ -56,3 +56,6 @@ class HMM:
     
     def get_gauss_means(self):
         return self.model.means_.tolist()
+    
+    def get_gauss_covars(self):
+        return self.model.covars_.tolist()

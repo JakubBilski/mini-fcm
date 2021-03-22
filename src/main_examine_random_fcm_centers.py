@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 from cognitiveMaps.deCognitiveMap import DECognitiveMap
-from cognitiveMaps import baseCognitiveMap
+from cognitiveMaps.mppiCognitiveMap import MppiCognitiveMap
 from cognitiveMaps.hmm import HMM
 from transformingData import cmeans
 from transformingData import derivatives
@@ -19,135 +19,62 @@ from examiningData import displaying
 
 plots_dir = pathlib.Path(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}\\')
 
+def generate_random_centers(no_samples, no_centers):
+    np.random.seed(1)
+    centerss = [np.asarray([np.random.rand(2) for _1 in range(no_centers)]) for _ in range(no_samples)]
+    return centerss
 
-def test_fcm(
-    test_xses_series,
-    test_ys,
-    train_xses_series,
-    train_ys,
-    no_classes,
-    dataset_name,
-    csv_results_path):
-    
-    np.random.seed(0)
 
-    print(f"{dataset_name}")
+def get_score_of_fcm_with_centers(train_xses_series, train_ys, test_xses_series, test_ys, centers):
+    print(f'\nExecuting for centers:')
+    print(centers)
+    print(f'Transforming to the centers\' space')
 
-    m = 2.0
-    no_centers = 2
-    ls = [1, 1.1, 1.2, 1.3, 1.4, 1.5]
-
-    csv_results_file = open(csv_results_path, 'w', newline='')
-    csv_writer = csv.writer(csv_results_file)
-    csv_writer.writerow(['dataset', 'no_classes'])
-    csv_writer.writerow([dataset_name, no_classes])
-    csv_writer.writerow(['m', 'L', 'accuracy'])
-
-    print(f'\nno_centers={no_centers}')
-
-    mainplot_xs = []
-    accuracyplot_ys = []
-    errorplot_ys = []
-    decencyplot_ys = []
-
-    centers, train_xses_series_transformed = cmeans.find_centers_and_transform(
+    train_xses_series_transformed = cmeans.transform(
         xses_series=train_xses_series,
-        c=no_centers,
-        m=m)
+        centers=centers)
+
     test_xses_series_transformed = cmeans.transform(
-            xses_series=test_xses_series,
-            centers=centers)
+        xses_series=test_xses_series,
+        centers=centers)
 
-    displaying.display_series_with_markers(
-        train_xses_series,
-        plots_dir / f'{dataset_name} visualization.png',
-        f'{dataset_name} visualization',
-        centers)
+    train_models = []
 
-    for L in ls:
-        baseCognitiveMap.SIGMOID_L = L
-        print(f'\nL={L}')
-        print(f'transforming with cmeans')
+    print(f'Learning train')
+    for xs, y in tqdm(zip(train_xses_series_transformed, train_ys)):
+        model = DECognitiveMap(no_centers)
+        model.train(xs)
+        model.set_class(y)
+        train_models.append(model)
 
-        mean_error = 0
+    test_models = []
 
-        train_models = []
+    for xs, y in tqdm(zip(test_xses_series_transformed, test_ys)):
+        model = DECognitiveMap(no_centers)
+        model.set_class(y)
+        test_models.append(model)
 
-        print(f'learning train')
-        for xs, y in tqdm(zip(train_xses_series_transformed, train_ys)):
-            model = DECognitiveMap(no_centers)
-            model.train(xs)
-            model.set_class(y)
-            train_models.append(model)
-            mean_error+=model.get_error(xs)
+    print("Example model:")
+    print(train_models[0].weights)
 
-        test_models = []
+    print("Share of degenerated weights:")
+    indecency = get_models_indecency(train_models)
+    print(indecency)
 
-        for xs, y in tqdm(zip(test_xses_series_transformed, test_ys)):
-            model = DECognitiveMap(no_centers)
-            model.set_class(y)
-            test_models.append(model)
-        
-        mean_error /= (len(train_models))
-        indecency = get_models_indecency(train_models)
-
-        print("share of degenerated weights")
-        print(indecency)
-
-
-        print("Example model:")
-        print(train_models[0].weights)
-
-        print(f'classifying with best_prediction')
-        accuracy = accuracyComparing.get_accuracy(
-            train_models=train_models,
-            test_models=test_models,
-            test_xs=test_xses_series_transformed,
-            input_size=no_centers,
-            no_classes=no_classes,
-            classification_method="best_prediction")
-        print(f'accuracy: {accuracy}')
-    
-
-        mainplot_xs.append(L)
-        accuracyplot_ys.append(accuracy)
-        errorplot_ys.append(mean_error)
-        decencyplot_ys.append(indecency)
-        csv_writer.writerow([m, L, accuracy])
-
-    fig, ax = plt.subplots()
-    ax.plot(mainplot_xs, accuracyplot_ys, color='blue')
-    ax.set(
-        xlabel='L',
-        ylabel='classification accuracy',
-        title=f'{dataset_name} decm m {m}, {no_centers} centers')
-    ax.grid()
-    ax2 = ax.twinx()
-    ax2.plot(mainplot_xs, decencyplot_ys, color='red')
-    ax2.set(ylabel='share of degenerated weights')
-
-    plt.savefig(plots_dir / f'{dataset_name} accuracy.png')
-    plt.close()
-
-    fig, ax = plt.subplots()
-    ax.plot(mainplot_xs, errorplot_ys, color='blue')
-    ax.set(
-        xlabel='L',
-        ylabel='prediction error',
-        title=f'{dataset_name} decm m {m}, {no_centers} centers')
-    ax.grid()
-    ax2 = ax.twinx()
-    ax2.plot(mainplot_xs, decencyplot_ys, color='red')
-    ax2.set(ylabel='share of degenerated weights')
-
-    plt.savefig(plots_dir / f'{dataset_name} error.png')
-    plt.close()
-
-    csv_results_file.close()
+    print(f'classifying with best_prediction')
+    accuracy = accuracyComparing.get_accuracy(
+        train_models=train_models,
+        test_models=test_models,
+        test_xs=test_xses_series_transformed,
+        input_size=no_centers,
+        no_classes=no_classes,
+        classification_method="best_prediction")
+    print(f'accuracy: {accuracy}')
+    return accuracy, indecency
 
 
 def get_models_indecency(models):
-    threshold = 1-1e-3
+    threshold = 0.99
     no_degenerated_weights = 0
     for model in models:
         no_degenerated_weights += np.sum(model.weights >= threshold)
@@ -155,39 +82,25 @@ def get_models_indecency(models):
     return no_degenerated_weights/(models[0].n*models[0].n*len(models))
 
 
-def perform_tests(
+def load_all_data(
     data_loading_function,
     test_path,
     train_path,
-    no_classes,
-    derivative_order,
-    dataset_name,
-    fcm_csv_path):
+    derivative_order):
 
+    print("Loading data")
     test_xses_series, test_ys = data_loading_function(test_path)
     test_xses_series = derivatives.transform(test_xses_series, derivative_order)
     
     train_xses_series, train_ys = data_loading_function(train_path)
     train_xses_series = derivatives.transform(train_xses_series, derivative_order)
 
+    print("Normalizing")
     mins, maxs = normalizing.get_mins_and_maxs(test_xses_series + train_xses_series)
     test_xses_series = normalizing.transform(test_xses_series, mins, maxs)
     train_xses_series = normalizing.transform(train_xses_series, mins, maxs)
 
-    displaying.display_series(
-        train_xses_series,
-        plots_dir / f'{dataset_name} visualization.png',
-        f'{dataset_name} visualization')
-
-    test_fcm(
-        test_xses_series,
-        test_ys,
-        train_xses_series,
-        train_ys,
-        no_classes,
-        dataset_name,
-        fcm_csv_path)
-    
+    return train_xses_series, train_ys, test_xses_series, test_ys
 
 
 if __name__ == "__main__":
@@ -196,7 +109,7 @@ if __name__ == "__main__":
 
     datasets = [
         ('ACSF1', 10),
-        ('Adiac', 36),
+        ('Adiac', 37),
         ('ArrowHead', 3),
         ('Beef', 5),
         ('BeetleFly', 2),
@@ -314,15 +227,64 @@ if __name__ == "__main__":
         ('WormsTwoClass', 2),
         ('Yoga', 2),
     ]
-    datasets = datasets[0:]
+
+    datasets = [datasets[0]]
+
+    no_centers = 3
 
     for dataset_name, no_classes in datasets:
-        perform_tests(
+        csv_path = f'plots\\picked\\centers_generated_with_hmm\\{dataset_name}_2_hmm_centers.csv'
+
+        no_random_samples = 2
+
+        print(f"{dataset_name}")
+        print(f"no_centers: {no_centers}")
+        train_xses_series, train_ys, test_xses_series, test_ys = load_all_data(
             data_loading_function=loadSktime.load_sktime,
             test_path=pathlib.Path(f'./data/Univariate/{dataset_name}/{dataset_name}_TEST.ts'),
             train_path=pathlib.Path(f'./data/Univariate/{dataset_name}/{dataset_name}_TRAIN.ts'),
-            no_classes=no_classes,
-            derivative_order=1,
-            dataset_name=dataset_name,
-            fcm_csv_path=plots_dir / f'{dataset_name}_fcm_csv_path.csv')
+            derivative_order=1)
+
+        random_centerss = generate_random_centers(no_random_samples, no_centers)
+        random_centerss_accuracy = []
+        random_centerss_indecency = []
+
+        for random_centers in tqdm(random_centerss):
+            acc, ind = get_score_of_fcm_with_centers(
+                train_xses_series,
+                train_ys,
+                test_xses_series,
+                test_ys,
+                random_centers
+            )
+            random_centerss_accuracy.append(acc)
+            random_centerss_indecency.append(ind)
+
+        print("\nGenerating cmeans centers")
+
+        cmeans_centers, _ = cmeans.find_centers_and_transform(
+            xses_series=train_xses_series,
+            c=no_centers,
+            m=2.0)
+        
+        cmeans_centers_accuracy, cmeans_centers_indecency = get_score_of_fcm_with_centers(
+                train_xses_series,
+                train_ys,
+                test_xses_series,
+                test_ys,
+                random_centers
+            )
+
+        better_than_cmeans = [i for i in range(no_random_samples) if random_centerss_accuracy[i] > cmeans_centers_accuracy]
+        print(f"{100*len(better_than_cmeans)/no_random_samples}% of centers performed better than cmeans")
+        print(f"cmeans accuracy: {cmeans_centers_accuracy}")
+        print(f"cmeans indecency: {cmeans_centers_indecency}")
+        print(f"mean random accuracy: {np.mean(random_centerss_accuracy)}")
+        print(f"mean random indecency: {np.mean(random_centerss_indecency)}")
+        print(f"mean indecency when more accurate: {np.mean([random_centerss_indecency[i] for i in better_than_cmeans])}")
+        indecency_zero = [i for i in range(no_random_samples) if random_centerss_indecency[i] == 0]
+        print(f"mean random accuracy when indecency zero: {np.mean([random_centerss_accuracy[i] for i in indecency_zero])}")
+
+        correlation_acc_ind = np.corrcoef(random_centerss_accuracy, random_centerss_indecency)[0, 1]
+        print(f"correlation of accuracy and indecency {correlation_acc_ind}")
 

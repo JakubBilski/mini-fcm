@@ -7,7 +7,7 @@ class FuzzyCognitiveMap(BaseCognitiveMap):
     def __init__(self, n):
         self.class_name = ""
         self.n = n
-        # np.random.seed = 0
+        np.random.seed(0)
         self.weights = np.random.rand(n, n)
         self.conv_pnt = None
 

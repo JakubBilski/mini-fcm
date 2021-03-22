@@ -29,7 +29,7 @@ def test_fcm(
     dataset_name,
     csv_results_path):
     
-    np.random.seed = 0
+    np.random.seed(0)
 
     print(f"{dataset_name}")
 

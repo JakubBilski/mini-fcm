@@ -103,6 +103,83 @@ def compare_fcm_hmm(hmm_dir, fcm_dir, results_dir):
         ax.legend()
         plt.savefig(results_dir / f'{dataset_name} classification.png')
         plt.close()
+          
+def compare_fcm_hmm_param(hmm_dir, fcm_dir, param_dir, results_dir):
+
+    hmm_xs_by_dataset = {}
+    hmm_ys_by_dataset = {}
+    fcm_xs_by_dataset = {}
+    fcm_ys_by_dataset = {}
+    param_xs_by_dataset = {}
+    param_ys_by_dataset = {}
+
+    no_classes_by_dataset = {}
+
+    for file in os.listdir(hmm_dir):
+        if file.endswith(".csv"):
+            csv_file = open(hmm_dir / file, newline='')
+            reader = csv.reader(csv_file, delimiter=' ', quotechar='|')
+            lines = [line[0].split(sep=',') for line in reader]
+            dataset_name = lines[1][0]
+            no_classes = lines[1][1]
+            no_classes_by_dataset[dataset_name] = no_classes
+            hmm_xs_by_dataset[dataset_name] = [row[0] for row in lines[3:]]
+            hmm_ys_by_dataset[dataset_name] = [float(row[1]) for row in lines[3:]]
+
+
+    for file in os.listdir(fcm_dir):
+        if file.endswith(".csv"):
+            csv_file = open(fcm_dir / file, newline='')
+            reader = csv.reader(csv_file, delimiter=' ', quotechar='|')
+            lines = [line[0].split(sep=',') for line in reader]
+            dataset_name = lines[1][0]
+            no_classes = lines[1][1]
+            no_classes_by_dataset[dataset_name] = no_classes
+            fcm_xs_by_dataset[dataset_name] = [row[1] for row in lines[3:]]
+            fcm_ys_by_dataset[dataset_name] = [float(row[2]) for row in lines[3:]]
+
+    for file in os.listdir(param_dir):
+        if file.endswith(".csv"):
+            csv_file = open(fcm_dir / file, newline='')
+            reader = csv.reader(csv_file, delimiter=' ', quotechar='|')
+            lines = [line[0].split(sep=',') for line in reader]
+            dataset_name = lines[1][0]
+            no_classes = lines[1][1]
+            no_classes_by_dataset[dataset_name] = no_classes
+            param_xs_by_dataset[dataset_name] = [row[1] for row in lines[3:]]
+            param_ys_by_dataset[dataset_name] = [float(row[2]) for row in lines[3:]]
+    
+    common_keys = fcm_xs_by_dataset.keys()
+    common_keys = [ck for ck in common_keys if ck in hmm_xs_by_dataset.keys()]
+    common_keys = [ck for ck in common_keys if ck in fcm_xs_by_dataset.keys()]
+
+    for dataset_name in common_keys:
+        fig, ax = plt.subplots()
+        ax.plot(
+            fcm_xs_by_dataset[dataset_name],
+            fcm_ys_by_dataset[dataset_name],
+            color='blue',
+            label=f'fcm tau=5')
+        ax.plot(
+            hmm_xs_by_dataset[dataset_name],
+            hmm_ys_by_dataset[dataset_name],
+            color='red',
+            label=f'hmm')
+        if dataset_name in param_xs_by_dataset.keys():
+            ax.plot(
+                param_xs_by_dataset[dataset_name],
+                param_ys_by_dataset[dataset_name],
+                color='orange',
+                label=f'fcm tau=2.5')
+
+        ax.set(
+            xlabel='# centers / # states',
+            ylabel='classification accuracy',
+            title=f'{dataset_name} ({no_classes_by_dataset[dataset_name]} classes) classification')
+        ax.grid()
+        ax.legend()
+        plt.savefig(results_dir / f'{dataset_name} classification.png')
+        plt.close()
   
 
 def compare_different_Ls(csv_dir, output_dir, title):
@@ -152,4 +229,5 @@ if __name__ == "__main__":
 
     hmm_dir = pathlib.Path('plots\\picked\\hmm_classification_results')
     fcm_dir = pathlib.Path('plots\\picked\\tau_5_decm_tests\\csvs')
-    compare_fcm_hmm(hmm_dir, fcm_dir, plots_dir)
+    param_dir = pathlib.Path('plots\\picked\\tau_2dot5_decm_tests\\csvs')
+    compare_fcm_hmm_param(hmm_dir, fcm_dir, param_dir, plots_dir)

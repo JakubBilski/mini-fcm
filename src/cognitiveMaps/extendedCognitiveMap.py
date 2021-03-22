@@ -10,7 +10,7 @@ class ExtendedCognitiveMap(BaseCognitiveMap):
         super().__init__(weights=None)
         self.k = k
         self.n = n
-        np.random.seed = 0
+        np.random.seed(0)
         self.start_values = np.random.rand(n)
         self.weights = np.random.rand(n, n)
 

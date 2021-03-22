@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 from cognitiveMaps.deCognitiveMap import DECognitiveMap
-from cognitiveMaps import baseCognitiveMap
+from cognitiveMaps.mppiCognitiveMap import MppiCognitiveMap
 from cognitiveMaps.hmm import HMM
 from transformingData import cmeans
 from transformingData import derivatives
@@ -19,135 +19,69 @@ from examiningData import displaying
 
 plots_dir = pathlib.Path(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}\\')
 
+def generate_random_centers(no_samples, no_centers):
+    np.random.seed(1)
+    centerss = [np.asarray([np.random.rand(2) for _1 in range(no_centers)]) for _ in range(no_samples)]
+    return centerss
 
-def test_fcm(
+
+def use_centers_to_train_models(train_xses_series, train_ys, centers):
+    print(f'\nExecuting for centers:')
+    print(centers)
+    print(f'Transforming to the centers\' space')
+
+    train_xses_series_transformed = cmeans.transform(
+        xses_series=train_xses_series,
+        centers=centers)
+
+    train_models = []
+
+    print(f'Learning train')
+    for xs, y in tqdm(zip(train_xses_series_transformed, train_ys)):
+        model = DECognitiveMap(no_centers)
+        model.train(xs)
+        model.set_class(y)
+        train_models.append(model)
+
+    print("Example model:")
+    print(train_models[0].weights)
+
+    print("Share of degenerated weights:")
+    indecency = get_models_indecency(train_models)
+    print(indecency)
+
+    return train_models, indecency
+
+def get_classification_score(
+    train_models,
     test_xses_series,
     test_ys,
-    train_xses_series,
-    train_ys,
-    no_classes,
-    dataset_name,
-    csv_results_path):
-    
-    np.random.seed(0)
+    centers):
 
-    print(f"{dataset_name}")
+    print(f'Transforming test data to the centers\' space')
 
-    m = 2.0
-    no_centers = 2
-    ls = [1, 1.1, 1.2, 1.3, 1.4, 1.5]
+    test_xses_series_transformed = cmeans.transform(test_xses_series, centers)
+    test_models = []
 
-    csv_results_file = open(csv_results_path, 'w', newline='')
-    csv_writer = csv.writer(csv_results_file)
-    csv_writer.writerow(['dataset', 'no_classes'])
-    csv_writer.writerow([dataset_name, no_classes])
-    csv_writer.writerow(['m', 'L', 'accuracy'])
+    for xs, y in zip(test_xses_series_transformed, test_ys):
+        model = DECognitiveMap(no_centers)
+        model.set_class(y)
+        test_models.append(model)
 
-    print(f'\nno_centers={no_centers}')
-
-    mainplot_xs = []
-    accuracyplot_ys = []
-    errorplot_ys = []
-    decencyplot_ys = []
-
-    centers, train_xses_series_transformed = cmeans.find_centers_and_transform(
-        xses_series=train_xses_series,
-        c=no_centers,
-        m=m)
-    test_xses_series_transformed = cmeans.transform(
-            xses_series=test_xses_series,
-            centers=centers)
-
-    displaying.display_series_with_markers(
-        train_xses_series,
-        plots_dir / f'{dataset_name} visualization.png',
-        f'{dataset_name} visualization',
-        centers)
-
-    for L in ls:
-        baseCognitiveMap.SIGMOID_L = L
-        print(f'\nL={L}')
-        print(f'transforming with cmeans')
-
-        mean_error = 0
-
-        train_models = []
-
-        print(f'learning train')
-        for xs, y in tqdm(zip(train_xses_series_transformed, train_ys)):
-            model = DECognitiveMap(no_centers)
-            model.train(xs)
-            model.set_class(y)
-            train_models.append(model)
-            mean_error+=model.get_error(xs)
-
-        test_models = []
-
-        for xs, y in tqdm(zip(test_xses_series_transformed, test_ys)):
-            model = DECognitiveMap(no_centers)
-            model.set_class(y)
-            test_models.append(model)
-        
-        mean_error /= (len(train_models))
-        indecency = get_models_indecency(train_models)
-
-        print("share of degenerated weights")
-        print(indecency)
-
-
-        print("Example model:")
-        print(train_models[0].weights)
-
-        print(f'classifying with best_prediction')
-        accuracy = accuracyComparing.get_accuracy(
-            train_models=train_models,
-            test_models=test_models,
-            test_xs=test_xses_series_transformed,
-            input_size=no_centers,
-            no_classes=no_classes,
-            classification_method="best_prediction")
-        print(f'accuracy: {accuracy}')
-    
-
-        mainplot_xs.append(L)
-        accuracyplot_ys.append(accuracy)
-        errorplot_ys.append(mean_error)
-        decencyplot_ys.append(indecency)
-        csv_writer.writerow([m, L, accuracy])
-
-    fig, ax = plt.subplots()
-    ax.plot(mainplot_xs, accuracyplot_ys, color='blue')
-    ax.set(
-        xlabel='L',
-        ylabel='classification accuracy',
-        title=f'{dataset_name} decm m {m}, {no_centers} centers')
-    ax.grid()
-    ax2 = ax.twinx()
-    ax2.plot(mainplot_xs, decencyplot_ys, color='red')
-    ax2.set(ylabel='share of degenerated weights')
-
-    plt.savefig(plots_dir / f'{dataset_name} accuracy.png')
-    plt.close()
-
-    fig, ax = plt.subplots()
-    ax.plot(mainplot_xs, errorplot_ys, color='blue')
-    ax.set(
-        xlabel='L',
-        ylabel='prediction error',
-        title=f'{dataset_name} decm m {m}, {no_centers} centers')
-    ax.grid()
-    ax2 = ax.twinx()
-    ax2.plot(mainplot_xs, decencyplot_ys, color='red')
-    ax2.set(ylabel='share of degenerated weights')
-
-    plt.savefig(plots_dir / f'{dataset_name} error.png')
-    plt.close()
-
-    csv_results_file.close()
+    print(f'classifying with best_prediction')
+    accuracy = accuracyComparing.get_accuracy(
+        train_models=train_models,
+        test_models=test_models,
+        test_xs=test_xses_series_transformed,
+        input_size=no_centers,
+        no_classes=no_classes,
+        classification_method="best_prediction")
+    print(f'accuracy: {accuracy}')
+    return accuracy
 
 
 def get_models_indecency(models):
-    threshold = 1-1e-3
+    threshold = 0.99
     no_degenerated_weights = 0
     for model in models:
         no_degenerated_weights += np.sum(model.weights >= threshold)
@@ -155,39 +89,25 @@ def get_models_indecency(models):
     return no_degenerated_weights/(models[0].n*models[0].n*len(models))
 
 
-def perform_tests(
+def load_all_data(
     data_loading_function,
     test_path,
     train_path,
-    no_classes,
-    derivative_order,
-    dataset_name,
-    fcm_csv_path):
+    derivative_order):
 
+    print("Loading data")
     test_xses_series, test_ys = data_loading_function(test_path)
     test_xses_series = derivatives.transform(test_xses_series, derivative_order)
     
     train_xses_series, train_ys = data_loading_function(train_path)
     train_xses_series = derivatives.transform(train_xses_series, derivative_order)
 
+    print("Normalizing")
     mins, maxs = normalizing.get_mins_and_maxs(test_xses_series + train_xses_series)
     test_xses_series = normalizing.transform(test_xses_series, mins, maxs)
     train_xses_series = normalizing.transform(train_xses_series, mins, maxs)
 
-    displaying.display_series(
-        train_xses_series,
-        plots_dir / f'{dataset_name} visualization.png',
-        f'{dataset_name} visualization')
-
-    test_fcm(
-        test_xses_series,
-        test_ys,
-        train_xses_series,
-        train_ys,
-        no_classes,
-        dataset_name,
-        fcm_csv_path)
-    
+    return train_xses_series, train_ys, test_xses_series, test_ys
 
 
 if __name__ == "__main__":
@@ -196,7 +116,7 @@ if __name__ == "__main__":
 
     datasets = [
         ('ACSF1', 10),
-        ('Adiac', 36),
+        ('Adiac', 37),
         ('ArrowHead', 3),
         ('Beef', 5),
         ('BeetleFly', 2),
@@ -314,15 +234,55 @@ if __name__ == "__main__":
         ('WormsTwoClass', 2),
         ('Yoga', 2),
     ]
-    datasets = datasets[0:]
+
+    datasets = [datasets[0]]
+
+    range_centers = [2,3]
+    no_random_samples = 1
 
     for dataset_name, no_classes in datasets:
-        perform_tests(
+        csv_path = plots_dir / f'{dataset_name}_results.csv'
+        csv_results_file = open(csv_path, 'w', newline='')
+        csv_writer = csv.writer(csv_results_file)
+        csv_writer.writerow(['dataset', 'no_classes', 'method', 'no_random_samples'])
+        csv_writer.writerow([dataset_name, no_classes, 'random center with lowest indecency', no_random_samples])
+        csv_writer.writerow(['no_centers', 'accuracy'])
+        print(f"{dataset_name}")
+        train_xses_series, train_ys, test_xses_series, test_ys = load_all_data(
             data_loading_function=loadSktime.load_sktime,
             test_path=pathlib.Path(f'./data/Univariate/{dataset_name}/{dataset_name}_TEST.ts'),
             train_path=pathlib.Path(f'./data/Univariate/{dataset_name}/{dataset_name}_TRAIN.ts'),
-            no_classes=no_classes,
-            derivative_order=1,
-            dataset_name=dataset_name,
-            fcm_csv_path=plots_dir / f'{dataset_name}_fcm_csv_path.csv')
+            derivative_order=1)
 
+        for no_centers in range_centers:
+            print(f"\nno_centers: {no_centers}")
+            random_centerss = generate_random_centers(no_random_samples, no_centers)
+            chosen_models = None
+            chosen_centers = None
+            chosen_models_indecency = 1.01
+
+            for random_centers in random_centerss:
+                train_models, ind = use_centers_to_train_models(
+                    train_xses_series,
+                    train_ys,
+                    random_centers
+                )
+                if ind < chosen_models_indecency:
+                    chosen_models = train_models
+                    chosen_centers = random_centers
+                    chosen_models_indecency = ind
+                    if chosen_models_indecency == 0:
+                        print("Found solution with indecency 0.0")
+                        break
+            
+            print("\nGenerating cmeans centers")
+
+            accuracy = get_classification_score(
+                    chosen_models,
+                    test_xses_series,
+                    test_ys,
+                    chosen_centers
+                )
+            
+            csv_writer.writerow([no_centers, accuracy])
+        csv_results_file.close()

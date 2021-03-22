@@ -23,7 +23,7 @@ plots_dir = pathlib.Path(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}
 
 
 def test_different_classifiers(test_xses_series, test_ys, train_xses_series, train_ys, no_classes, input_size, plot_title):
-    np.random.seed = 0
+    np.random.seed(0)
     no_random_centers = 20
 
     mainplot_xs = []

@@ -59,17 +59,21 @@ def test_fcm(
                 centers=centers)
 
             train_models = []
+            train_xses_series_by_class = [[] for _ in range(no_classes)]
+
+            for xs, y in zip(train_xses_series_transformed, train_ys):
+                train_xses_series_by_class[y].append(xs)
 
             print(f'learning train')
-            for xs, y in tqdm(zip(train_xses_series_transformed, train_ys)):
+            for i in tqdm(range(no_classes)):
                 model = DECognitiveMap(no_centers)
-                model.train(xs)
-                model.set_class(y)
+                model.train(train_xses_series_by_class[i])
+                model.set_class(i)
                 train_models.append(model)
 
             test_models = []
 
-            for xs, y in tqdm(zip(test_xses_series_transformed, test_ys)):
+            for xs, y in zip(test_xses_series_transformed, test_ys):
                 model = DECognitiveMap(no_centers)
                 model.set_class(y)
                 test_models.append(model)
@@ -85,7 +89,7 @@ def test_fcm(
                 input_size=no_centers,
                 no_classes=no_classes,
                 classification_method="best_prediction")
-            print(f'accuracy: {accuracy}')            
+            print(f'accuracy: {accuracy}')
 
             mainplot_xs.append(no_centers)
             mainplot_ys.append(accuracy)
@@ -116,26 +120,33 @@ def test_hmm(
 
     csv_results_file = open(csv_results_path, 'w', newline='')
     csv_writer = csv.writer(csv_results_file)
-    csv_writer.writerow(['dataset', 'no_classes'])
-    csv_writer.writerow([dataset_name, no_classes])
+    csv_writer.writerow(['dataset', 'no_classes', 'method'])
+    csv_writer.writerow([dataset_name, no_classes, "one hmm for class"])
     csv_writer.writerow(['no_states', 'accuracy'])
 
-    for no_states in tqdm(range(2, 4)):
+    for no_states in range(2, 11):
+        print(f"no states {no_states}")
         hmm_train_models = []
+        train_xses_series_by_class = [[] for _ in range(no_classes)]
         hmm_error_occured = False
 
         for xs, y in zip(train_xses_series, train_ys):
+            train_xses_series_by_class[y].append(xs)
+        
+        print(f'learning train')
+        for i in tqdm(range(no_classes)):
             hmm = HMM(no_states)
             try:
-                hmm.train(xs, 100)
+                hmm.train(train_xses_series_by_class[i], 100)
             except:
                 hmm_error_occured = True
                 break
-            hmm.set_class(y)
+            hmm.set_class(i)
             hmm_train_models.append(hmm)
 
         if not hmm_error_occured:
             try:
+                print(f'classifying with best_prediction')
                 accuracy = accuracyComparing.get_accuracy_hmm(
                     train_models=hmm_train_models,
                     test_xs=test_xses_series,
@@ -146,6 +157,7 @@ def test_hmm(
             except:
                 hmm_error_occured = True
         
+
         if hmm_error_occured:
             print(f"hmm error occured for no_states {no_states}")
             break
@@ -153,6 +165,7 @@ def test_hmm(
             mainplot_xs.append(no_states)
             mainplot_ys.append(accuracy)
             csv_writer.writerow([no_states, accuracy])
+            print(f'accuracy: {accuracy}')
     
     fig, ax = plt.subplots()
     ax.plot(mainplot_xs, mainplot_ys, color='blue')
@@ -217,8 +230,8 @@ if __name__ == "__main__":
 
     os.mkdir(plots_dir)
 
-    testing_fcm = True
-    testing_hmm = False
+    testing_fcm = False
+    testing_hmm = True
 
     datasets = [
         ('ACSF1', 10),
@@ -349,8 +362,8 @@ if __name__ == "__main__":
             no_classes=no_classes,
             derivative_order=1,
             dataset_name=dataset_name,
-            fcm_csv_path=plots_dir / f'{dataset_name}_fcm_csv_path.csv',
-            hmm_csv_path=plots_dir / f'{dataset_name}_hmm_csv_path.csv',
+            fcm_csv_path=plots_dir / f'{dataset_name}_fcm_one_class.csv',
+            hmm_csv_path=plots_dir / f'{dataset_name}_hmm_one_class.csv',
             testing_fcm=testing_fcm,
             testing_hmm=testing_hmm)
 

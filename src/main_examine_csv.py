@@ -140,7 +140,7 @@ def compare_fcm_hmm_param(hmm_dir, fcm_dir, param_dir, results_dir):
 
     for file in os.listdir(param_dir):
         if file.endswith(".csv"):
-            csv_file = open(fcm_dir / file, newline='')
+            csv_file = open(param_dir / file, newline='')
             reader = csv.reader(csv_file, delimiter=' ', quotechar='|')
             lines = [line[0].split(sep=',') for line in reader]
             dataset_name = lines[1][0]
@@ -171,7 +171,6 @@ def compare_fcm_hmm_param(hmm_dir, fcm_dir, param_dir, results_dir):
                 param_ys_by_dataset[dataset_name],
                 color='orange',
                 label=f'fcm tau=2.5')
-
         ax.set(
             xlabel='# centers / # states',
             ylabel='classification accuracy',

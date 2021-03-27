@@ -7,7 +7,7 @@ class HMM:
         self.class_name = ""
         self.n = n
 
-    def train(self, inputs_in_time, no_random_initializations):
+    def train(self, inputs_in_time, no_random_initializations=100):
         concatenated_inputs = np.concatenate(inputs_in_time)
         lengths = [len(x) for x in inputs_in_time]
         warnings.filterwarnings(action='ignore', category=RuntimeWarning)
@@ -26,8 +26,9 @@ class HMM:
             ])
             new_model.covars_ = random_covars
             new_model.fit(concatenated_inputs, lengths)
+
             # sometimes, despite converging, the model will be invalid
-            # and it will hopefully raise an error during score()
+            # and it will raise an error during score()
             if new_model.monitor_.converged:
                 try:
                     score = 0
@@ -36,13 +37,11 @@ class HMM:
                     models_with_scores.append((new_model, score))
                 except:
                     pass
-        # for m, s in models_with_scores:
-        #     print(s)
-        # print()
+
         warnings.resetwarnings()
         if len(models_with_scores) == 0:
             raise Exception("Unable to learn a valid model")
-        # print(sorted([s for m, s in models_with_scores]))
+
         self.model = max(models_with_scores, key=lambda ms: ms[1])[0]
 
     def get_emission_probability(self, input_in_time):

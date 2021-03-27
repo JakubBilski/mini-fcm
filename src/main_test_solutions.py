@@ -1,14 +1,13 @@
 # flake8: noqa
 from tqdm import tqdm
-import numpy as np
 import pathlib
 import os
 import csv
-import matplotlib.pyplot as plt
 from datetime import datetime
+import argparse
 
 from cognitiveMaps.deCognitiveMap import DECognitiveMap
-from cognitiveMaps.mppiCognitiveMap import MppiCognitiveMap
+from cognitiveMaps.deShrinkedCognitiveMap import DEShrinkedCognitiveMap
 from cognitiveMaps.hmm import HMM
 from transformingData import cmeans
 from transformingData import derivatives
@@ -20,7 +19,8 @@ from examiningData import displaying
 plots_dir = pathlib.Path(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}\\')
 
 
-def test_fcm(
+def test_solution(
+    solution_name,
     test_xses_series,
     test_ys,
     train_xses_series,
@@ -29,165 +29,89 @@ def test_fcm(
     dataset_name,
     csv_results_path):
     
-    np.random.seed(0)
+    if solution_name in ['hmm nn', 'hmm 1c']:
+        model_class = HMM
+    elif solution_name in ['fcm nn', 'fcm 1c']:
+        model_class = DECognitiveMap
+    elif solution_name == 'sfcm nn':
+        model_class = DEShrinkedCognitiveMap
+    else:
+        raise Exception(f"Solution name {solution_name} not recognized")
 
-    print(f"{dataset_name}")
-
-    ms = [2.0]
-
-    csv_results_file = open(csv_results_path, 'w', newline='')
-    csv_writer = csv.writer(csv_results_file)
-    csv_writer.writerow(['dataset', 'no_classes', 'method'])
-    csv_writer.writerow([dataset_name, no_classes, 'fcm 1c'])
-    csv_writer.writerow(['m', 'no_centers', 'accuracy', 'centers'])
-
-    for m in ms:
-        print(f'm={m}')
-        mainplot_xs = []
-        mainplot_ys = []
-        for no_centers in range(2, 11):
-            print(f'\nno_centers={no_centers}')
-            print(f'transforming with cmeans')
-
-            centers, train_xses_series_transformed = cmeans.find_centers_and_transform(
-                xses_series=train_xses_series,
-                c=no_centers,
-                m=m)
-        
-            test_xses_series_transformed = cmeans.transform(
-                xses_series=test_xses_series,
-                centers=centers)
-
-            train_models = []
-            train_xses_series_by_class = [[] for _ in range(no_classes)]
-
-            for xs, y in zip(train_xses_series_transformed, train_ys):
-                train_xses_series_by_class[y].append(xs)
-
-            print(f'learning train')
-            for i in tqdm(range(no_classes)):
-                model = DECognitiveMap(no_centers)
-                model.train(train_xses_series_by_class[i])
-                model.set_class(i)
-                train_models.append(model)
-
-            test_models = []
-
-            for xs, y in zip(test_xses_series_transformed, test_ys):
-                model = DECognitiveMap(no_centers)
-                model.set_class(y)
-                test_models.append(model)
-
-            print("Example model:")
-            print(train_models[0].weights)
-
-            print(f'classifying with best_prediction')
-            accuracy = accuracyComparing.get_accuracy(
-                train_models=train_models,
-                test_models=test_models,
-                test_xs=test_xses_series_transformed,
-                input_size=no_centers,
-                no_classes=no_classes,
-                classification_method="best_prediction")
-            print(f'accuracy: {accuracy}')
-
-            mainplot_xs.append(no_centers)
-            mainplot_ys.append(accuracy)
-            csv_writer.writerow([m, no_centers, accuracy] + centers)
-
-        fig, ax = plt.subplots()
-        ax.plot(mainplot_xs, mainplot_ys, color='blue')
-        ax.set(xlabel='# centers', ylabel='classification accuracy', title=f'{dataset_name} decm m {m}')
-        ax.grid()
-        plt.savefig(plots_dir / f'{dataset_name} decm m {m}.png')
-        plt.close()
-
-    csv_results_file.close()
-
-
-def test_hmm(
-    test_xses_series,
-    test_ys,
-    train_xses_series,
-    train_ys,
-    no_classes,
-    dataset_name,
-    csv_results_path):
-
-    mainplot_xs = []
-    mainplot_ys = []
-    print(f"{dataset_name}")
+    print(f"Starting: {dataset_name} with {solution_name}")
 
     csv_results_file = open(csv_results_path, 'w', newline='')
     csv_writer = csv.writer(csv_results_file)
     csv_writer.writerow(['dataset', 'no_classes', 'method'])
-    csv_writer.writerow([dataset_name, no_classes, "hmm 1c"])
+    csv_writer.writerow([dataset_name, no_classes, solution_name])
     csv_writer.writerow(['no_states', 'accuracy'])
 
     for no_states in range(2, 11):
         print(f"no states {no_states}")
-        hmm_train_models = []
-        train_xses_series_by_class = [[] for _ in range(no_classes)]
-        hmm_error_occured = False
 
-        for xs, y in zip(train_xses_series, train_ys):
-            train_xses_series_by_class[y].append(xs)
-        
-        print(f'learning train')
-        for i in tqdm(range(no_classes)):
-            hmm = HMM(no_states)
+        if solution_name in ['fcm nn', 'fcm 1c', 'sfcm nn']:
+            print(f'transforming with cmeans')
+            centers, train_xses_series = cmeans.find_centers_and_transform(
+                xses_series=train_xses_series,
+                c=no_states)
+            test_xses_series = cmeans.transform(
+                xses_series=test_xses_series,
+                centers=centers)
+
+        if solution_name in ['hmm 1c', 'fcm 1c']:
+            learning_input = [([], i) for i in range(no_classes)]
+            for xs, y in zip(train_xses_series, train_ys):
+                learning_input[y][0].append(xs)
+        else:
+            learning_input = [([xs], y) for xs, y in zip(train_xses_series, train_ys)]
+
+        print(f'learning train models')
+        error_occured = False
+        train_models = []
+        for i in tqdm(range(len(learning_input))):
+            model = model_class(no_states)
             try:
-                hmm.train(train_xses_series_by_class[i], 100)
+                model.train(learning_input[i][0])
             except:
-                hmm_error_occured = True
+                error_occured = True
                 break
-            hmm.set_class(i)
-            hmm_train_models.append(hmm)
+            model.set_class(learning_input[i][1])
+            train_models.append(model)
 
-        if not hmm_error_occured:
+        if not error_occured:
             try:
                 print(f'classifying with best_prediction')
-                accuracy = accuracyComparing.get_accuracy_hmm(
-                    train_models=hmm_train_models,
-                    test_xs=test_xses_series,
-                    test_classes=test_ys,
-                    input_size=no_states,
-                    no_classes=no_classes
-                )
+                if solution_name in ['hmm nn', 'hmm 1c']:
+                    accuracy = accuracyComparing.get_accuracy_hmm_best_prediction(
+                        train_models=train_models,
+                        test_xs=test_xses_series,
+                        test_classes=test_ys
+                    )
+                else:
+                    accuracy = accuracyComparing.get_accuracy_fcm_best_prediction(
+                        train_models=train_models,
+                        test_xs=test_xses_series,
+                        test_classes=test_ys
+                    )
             except:
-                hmm_error_occured = True
-        
+                error_occured = True
 
-        if hmm_error_occured:
-            print(f"hmm error occured for no_states {no_states}")
+        if error_occured:
+            print(f"error occured for no_states {no_states}")
             break
         else:
-            mainplot_xs.append(no_states)
-            mainplot_ys.append(accuracy)
             csv_writer.writerow([no_states, accuracy])
             print(f'accuracy: {accuracy}')
     
-    fig, ax = plt.subplots()
-    ax.plot(mainplot_xs, mainplot_ys, color='blue')
-    ax.set(xlabel='# hidden states', ylabel='classification accuracy', title=f'{dataset_name} hmm')
-    ax.grid()
-    plt.savefig(plots_dir / f'{dataset_name} hmm.png')
-    plt.close()
-
     csv_results_file.close()
 
 
-def perform_tests(
+def load_preprocessed_data(
     data_loading_function,
     test_path,
     train_path,
-    no_classes,
     derivative_order,
-    dataset_name,
-    fcm_csv_path,
-    hmm_csv_path,
-    testing_fcm=False,
-    testing_hmm=False):
+    dataset_name):
 
     test_xses_series, test_ys = data_loading_function(test_path)
     test_xses_series = derivatives.transform(test_xses_series, derivative_order)
@@ -203,35 +127,30 @@ def perform_tests(
         train_xses_series,
         plots_dir / f'{dataset_name} visualization.png',
         f'{dataset_name} visualization')
-
-    if testing_fcm:
-        test_fcm(
-            test_xses_series,
-            test_ys,
-            train_xses_series,
-            train_ys,
-            no_classes,
-            dataset_name,
-            fcm_csv_path)
     
-    if testing_hmm:
-        test_hmm(
-            test_xses_series,
-            test_ys,
-            train_xses_series,
-            train_ys,
-            no_classes,
-            dataset_name,
-            hmm_csv_path
-        )
+    return train_xses_series, train_ys, test_xses_series, test_ys
+
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Test classification accuracy on TimeSeriesClassification datasets')
+    parser.add_argument('--solution',
+                        '-s',
+                        choices=['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn'],
+                        default='sfcm nn',
+                        help='How models used during classification will be trained',
+                        type=str)
+    args = parser.parse_args()
+    return args
 
 
 if __name__ == "__main__":
 
-    os.mkdir(plots_dir)
+    args = parse_args()
+    solution_name = args.solution
 
-    testing_fcm = False
-    testing_hmm = True
+    os.mkdir(plots_dir)
 
     datasets = [
         ('ACSF1', 10),
@@ -353,18 +272,23 @@ if __name__ == "__main__":
         ('WormsTwoClass', 2),
         ('Yoga', 2),
     ]
-    datasets = datasets[1:]
 
     for dataset_name, no_classes in datasets:
-        perform_tests(
+        print(f"Preprocessing {dataset_name}")
+        train_xses_series, train_ys, test_xses_series, test_ys = load_preprocessed_data(
             data_loading_function=loadSktime.load_sktime,
             test_path=pathlib.Path(f'./data/Univariate/{dataset_name}/{dataset_name}_TEST.ts'),
             train_path=pathlib.Path(f'./data/Univariate/{dataset_name}/{dataset_name}_TRAIN.ts'),
-            no_classes=no_classes,
             derivative_order=1,
-            dataset_name=dataset_name,
-            fcm_csv_path=plots_dir / f'{dataset_name}_fcm_one_class.csv',
-            hmm_csv_path=plots_dir / f'{dataset_name}_hmm_one_class.csv',
-            testing_fcm=testing_fcm,
-            testing_hmm=testing_hmm)
+            dataset_name=dataset_name)
 
+        print('_________')
+        test_solution(
+            solution_name=solution_name,
+            test_xses_series=test_xses_series,
+            test_ys=test_ys,
+            train_xses_series=train_xses_series,
+            train_ys=train_ys,
+            no_classes=no_classes,
+            dataset_name=dataset_name,
+            csv_results_path=plots_dir / f'{dataset_name}_{solution_name}_classification_results.csv')

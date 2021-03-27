@@ -129,6 +129,9 @@ if __name__ == "__main__":
     hmm_dir = pathlib.Path('plots\\picked\\hmm_classification_results')
     fcm_dir = pathlib.Path('plots\\picked\\tau_5_decm_tests\\csvs')
     param_dir = pathlib.Path('plots\\picked\\tau_2dot5_decm_tests\\csvs')
-    
     csv_dirs = [fcm_dir, hmm_dir, param_dir]
+    
+    all_dir = pathlib.Path('D:\\Projekty\\fcm\\mini-fcm\\plots\\27-03-2021-20-22-16')
+    csv_dirs = [all_dir]
+
     compare_classification_results(csv_dirs, plots_dir)

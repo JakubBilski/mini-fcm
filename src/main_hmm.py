@@ -353,7 +353,7 @@ if __name__ == "__main__":
         ('WormsTwoClass', 2),
         ('Yoga', 2),
     ]
-    datasets = [datasets[1]]
+    datasets = datasets[1:]
 
     for dataset_name, no_classes in datasets:
         perform_tests(

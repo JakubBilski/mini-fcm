@@ -268,3 +268,26 @@ def display_trajectories_with_different_markers(xses_series, plot_path, main_tit
 
     plt.savefig(plot_path)
     plt.close()
+
+
+def display_comparison(title, x_title, y_title, save_path, plots_xs, plots_ys, labels):
+    colors = ['blue', 'red', 'orange', 'green', 'purple', 'brown', 'black']
+    no_plots = len(labels)
+    if no_plots > len(colors):
+        raise Exception(f"Number of plots ({no_plots}) cannot be greater than {len(colors)}")
+    fig, ax = plt.subplots()
+    for i in range(no_plots):
+        ax.plot(
+            plots_xs[i],
+            plots_ys[i],
+            color=colors[i],
+            label=labels[i])
+
+    ax.set(
+        xlabel=x_title,
+        ylabel=y_title,
+        title=title)
+    ax.grid()
+    ax.legend()
+    plt.savefig(save_path)
+    plt.close()

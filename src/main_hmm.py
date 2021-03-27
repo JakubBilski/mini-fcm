@@ -37,8 +37,8 @@ def test_fcm(
 
     csv_results_file = open(csv_results_path, 'w', newline='')
     csv_writer = csv.writer(csv_results_file)
-    csv_writer.writerow(['dataset', 'no_classes'])
-    csv_writer.writerow([dataset_name, no_classes])
+    csv_writer.writerow(['dataset', 'no_classes', 'method'])
+    csv_writer.writerow([dataset_name, no_classes, 'fcm 1c'])
     csv_writer.writerow(['m', 'no_centers', 'accuracy', 'centers'])
 
     for m in ms:
@@ -121,7 +121,7 @@ def test_hmm(
     csv_results_file = open(csv_results_path, 'w', newline='')
     csv_writer = csv.writer(csv_results_file)
     csv_writer.writerow(['dataset', 'no_classes', 'method'])
-    csv_writer.writerow([dataset_name, no_classes, "one hmm for class"])
+    csv_writer.writerow([dataset_name, no_classes, "hmm 1c"])
     csv_writer.writerow(['no_states', 'accuracy'])
 
     for no_states in range(2, 11):

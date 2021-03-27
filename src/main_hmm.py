@@ -235,7 +235,7 @@ if __name__ == "__main__":
 
     datasets = [
         ('ACSF1', 10),
-        ('Adiac', 36),
+        ('Adiac', 37),
         ('ArrowHead', 3),
         ('Beef', 5),
         ('BeetleFly', 2),
@@ -353,6 +353,7 @@ if __name__ == "__main__":
         ('WormsTwoClass', 2),
         ('Yoga', 2),
     ]
+    datasets = [datasets[1]]
 
     for dataset_name, no_classes in datasets:
         perform_tests(

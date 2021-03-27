@@ -196,7 +196,7 @@ if __name__ == "__main__":
 
     datasets = [
         ('ACSF1', 10),
-        ('Adiac', 36),
+        ('Adiac', 37),
         ('ArrowHead', 3),
         ('Beef', 5),
         ('BeetleFly', 2),

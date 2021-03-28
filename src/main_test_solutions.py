@@ -46,24 +46,27 @@ def test_solution(
     csv_writer.writerow([dataset_name, no_classes, solution_name])
     csv_writer.writerow(['no_states', 'accuracy'])
 
-    for no_states in range(2, 11):
+    for no_states in range(3, 11):
         print(f"no states {no_states}")
 
         if solution_name in ['fcm nn', 'fcm 1c', 'sfcm nn']:
             print(f'transforming with cmeans')
-            centers, train_xses_series = cmeans.find_centers_and_transform(
+            centers, transformed_train_xses_series = cmeans.find_centers_and_transform(
                 xses_series=train_xses_series,
                 c=no_states)
-            test_xses_series = cmeans.transform(
+            transformed_test_xses_series = cmeans.transform(
                 xses_series=test_xses_series,
                 centers=centers)
+        else:
+            transformed_train_xses_series = train_xses_series
+            transformed_test_xses_series = test_xses_series
 
         if solution_name in ['hmm 1c', 'fcm 1c']:
             learning_input = [([], i) for i in range(no_classes)]
-            for xs, y in zip(train_xses_series, train_ys):
+            for xs, y in zip(transformed_train_xses_series, train_ys):
                 learning_input[y][0].append(xs)
         else:
-            learning_input = [([xs], y) for xs, y in zip(train_xses_series, train_ys)]
+            learning_input = [([xs], y) for xs, y in zip(transformed_train_xses_series, train_ys)]
 
         print(f'learning train models')
         error_occured = False
@@ -84,13 +87,13 @@ def test_solution(
                 if solution_name in ['hmm nn', 'hmm 1c']:
                     accuracy = accuracyComparing.get_accuracy_hmm_best_prediction(
                         train_models=train_models,
-                        test_xs=test_xses_series,
+                        test_xs=transformed_test_xses_series,
                         test_classes=test_ys
                     )
                 else:
                     accuracy = accuracyComparing.get_accuracy_fcm_best_prediction(
                         train_models=train_models,
-                        test_xs=test_xses_series,
+                        test_xs=transformed_test_xses_series,
                         test_classes=test_ys
                     )
             except:

@@ -81,6 +81,39 @@ def compare_classification_results(csv_dirs, results_dir):
         )
 
 
+def compare_degeneration_results(csv_dirs, results_dir):
+    xs_by_dataset_by_method = {}
+    ys_by_dataset_by_method = {}
+
+    no_classes_by_dataset = {}
+
+    for csv_dir in csv_dirs:
+        for file in os.listdir(csv_dir):
+            if file.endswith(".csv"):
+                csv_file = open(csv_dir / file, newline='')
+                reader = csv.reader(csv_file, delimiter='\n', quotechar='|')
+                lines = [line[0].split(sep=',') for line in reader]
+                dataset_name = lines[1][0]
+                no_classes = lines[1][1]
+                method_name = lines[1][2]
+                no_classes_by_dataset[dataset_name] = no_classes
+                if dataset_name not in xs_by_dataset_by_method.keys():
+                    xs_by_dataset_by_method[dataset_name] = {}
+                    ys_by_dataset_by_method[dataset_name] = {}
+                xs_by_dataset_by_method[dataset_name][method_name] = [row[0] for row in lines[3:]]
+                ys_by_dataset_by_method[dataset_name][method_name] = [float(row[2]) for row in lines[3:]]
+
+    for dataset_name in no_classes_by_dataset.keys():
+        display_comparison(
+            f"{dataset_name} ({no_classes_by_dataset[dataset_name]} classes) degeneration",
+            x_title='# centers / # states',
+            y_title='degenerated weights share',
+            save_path=results_dir / f'{dataset_name} degeneration.png',
+            plots_xs=list(xs_by_dataset_by_method[dataset_name].values()),
+            plots_ys=list(ys_by_dataset_by_method[dataset_name].values()),
+            labels=list(xs_by_dataset_by_method[dataset_name].keys())
+        )
+
 def compare_different_Ls(csv_dir, output_dir, title):
     mean_accuracy = {}
     for L in ["1", "1.1", "1.2", "1.3", "1.4", "1.5"]:
@@ -131,7 +164,8 @@ if __name__ == "__main__":
     param_dir = pathlib.Path('plots\\picked\\tau_2dot5_decm_tests\\csvs')
     csv_dirs = [fcm_dir, hmm_dir, param_dir]
     
-    all_dir = pathlib.Path('D:\\Projekty\\fcm\\mini-fcm\\plots\\27-03-2021-20-22-16')
+    all_dir = pathlib.Path('D:\\Projekty\\fcm\\mini-fcm\\plots\\picked\\arrowhead_tau_examination')
     csv_dirs = [all_dir]
 
     compare_classification_results(csv_dirs, plots_dir)
+    compare_degeneration_results(csv_dirs, plots_dir)

@@ -8,6 +8,7 @@ import argparse
 
 from cognitiveMaps.deCognitiveMap import DECognitiveMap
 from cognitiveMaps.deShrinkedCognitiveMap import DEShrinkedCognitiveMap
+from cognitiveMaps.deVeryShrinkedCognitiveMap import DEVeryShrinkedCognitiveMap
 from cognitiveMaps.hmm import HMM
 from transformingData import cmeans
 from transformingData import derivatives
@@ -15,6 +16,7 @@ from transformingData import normalizing
 from testingResults import accuracyComparing
 from loadingData import loadSktime
 from examiningData import displaying
+from examiningData import basicExamining
 
 plots_dir = pathlib.Path(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}\\')
 
@@ -35,6 +37,8 @@ def test_solution(
         model_class = DECognitiveMap
     elif solution_name == 'sfcm nn':
         model_class = DEShrinkedCognitiveMap
+    elif solution_name == 'vsfcm nn':
+        model_class = DEVeryShrinkedCognitiveMap
     else:
         raise Exception(f"Solution name {solution_name} not recognized")
 
@@ -44,12 +48,12 @@ def test_solution(
     csv_writer = csv.writer(csv_results_file)
     csv_writer.writerow(['dataset', 'no_classes', 'method'])
     csv_writer.writerow([dataset_name, no_classes, solution_name])
-    csv_writer.writerow(['no_states', 'accuracy'])
+    csv_writer.writerow(['no_states', 'accuracy', 'degenerated_share'])
 
-    for no_states in range(3, 11):
+    for no_states in range(2, 11):
         print(f"no states {no_states}")
 
-        if solution_name in ['fcm nn', 'fcm 1c', 'sfcm nn']:
+        if solution_name in ['fcm nn', 'fcm 1c', 'sfcm nn', 'vsfcm nn']:
             print(f'transforming with cmeans')
             centers, transformed_train_xses_series = cmeans.find_centers_and_transform(
                 xses_series=train_xses_series,
@@ -80,6 +84,8 @@ def test_solution(
                 break
             model.set_class(learning_input[i][1])
             train_models.append(model)
+        
+        degenerated_share = basicExamining.get_share_of_degenerated_weights(train_models, 0.99)
 
         if not error_occured:
             try:
@@ -103,8 +109,9 @@ def test_solution(
             print(f"error occured for no_states {no_states}")
             break
         else:
-            csv_writer.writerow([no_states, accuracy])
+            csv_writer.writerow([no_states, accuracy, degenerated_share])
             print(f'accuracy: {accuracy}')
+            print(f'share of degenerated weights: {degenerated_share}')
     
     csv_results_file.close()
 
@@ -140,7 +147,7 @@ def parse_args():
         description='Test classification accuracy on TimeSeriesClassification datasets')
     parser.add_argument('--solution',
                         '-s',
-                        choices=['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn'],
+                        choices=['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn'],
                         default='sfcm nn',
                         help='How models used during classification will be trained',
                         type=str)

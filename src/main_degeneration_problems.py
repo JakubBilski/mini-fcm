@@ -177,10 +177,10 @@ if __name__ == "__main__":
         ('Yoga', 2),
     ]
 
-    datasets = [datasets[1]]
+    datasets = [datasets[2]]
 
     no_centers = 3
-    no_trajectories_to_display = 5
+    no_trajectories_to_display = 1
 
     
     for dataset_name, no_classes in datasets:
@@ -191,7 +191,7 @@ if __name__ == "__main__":
             test_path=pathlib.Path(f'./data/Univariate/{dataset_name}/{dataset_name}_TEST.ts'),
             train_path=pathlib.Path(f'./data/Univariate/{dataset_name}/{dataset_name}_TRAIN.ts'),
             derivative_order=1)
-        
+        print("Transforming with cmeans")
         cmeans_centers, transformed_train_xses_series = cmeans.find_centers_and_transform(
             xses_series=train_xses_series,
             c=no_centers,
@@ -201,7 +201,7 @@ if __name__ == "__main__":
         for traj in range(no_trajectories_to_display):
             txs = transformed_train_xses_series[traj]
             decm = DECognitiveMap(no_centers)
-            decm.train(txs)
+            decm.train([txs])
             print(decm.weights)
         
             filenames = []
@@ -214,7 +214,7 @@ if __name__ == "__main__":
                 )
                 filenames.append(filename)
 
-            with imageio.get_writer(str(plots_dir / f"{dataset_name}_trajectory_{traj}.gif"), mode='I') as writer:
+            with imageio.get_writer(str(plots_dir / f"{dataset_name}_tau4_trajectory_{traj}.gif"), mode='I') as writer:
                 for filename in filenames:
                     image = imageio.imread(filename)
                     writer.append_data(image)

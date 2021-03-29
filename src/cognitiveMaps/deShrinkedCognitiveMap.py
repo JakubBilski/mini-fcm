@@ -15,7 +15,9 @@ class DEShrinkedCognitiveMap(BaseCognitiveMap):
         n = args[0]
         expected_input = args[1]
         expected_output = args[2]
-        buff = DEShrinkedCognitiveMap.f((x.reshape(n-1, n)).dot(expected_input)) - expected_output
+        computed_output = DEShrinkedCognitiveMap.f((x.reshape(n-1, n)).dot(expected_input))
+        computed_output = np.append(computed_output, (1-np.sum(computed_output, axis=0))[None,...], axis=0)
+        buff = computed_output - expected_output
         return np.mean(np.multiply(buff, buff))
 
     def train(self, inputs_in_time, maxiter=100):
@@ -24,7 +26,7 @@ class DEShrinkedCognitiveMap(BaseCognitiveMap):
         for input_in_time in inputs_in_time:
             expected_output.extend(input_in_time[1:])
             expected_input.extend(input_in_time[:-1])
-        expected_output = np.array(expected_output)[:, :-1].transpose()
+        expected_output = np.array(expected_output).transpose()
         expected_input = np.array(expected_input).transpose()
         bounds = [(-1, 1) for _ in range(self.n*(self.n-1))]
         result = differential_evolution(

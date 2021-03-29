@@ -37,7 +37,7 @@ class DEVeryShrinkedCognitiveMap(BaseCognitiveMap):
         # print(self.weights)
 
     def get_error(self, input_in_time):
-        expected_output = input_in_time[1:][:, :-1]
+        expected_output = np.asarray(input_in_time[1:])[:, :-1]
         computed_output = self.predict(input_in_time)
         error = computed_output - expected_output
         error = np.mean(np.multiply(error, error))

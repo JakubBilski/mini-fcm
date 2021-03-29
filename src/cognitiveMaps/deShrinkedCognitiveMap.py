@@ -36,7 +36,7 @@ class DEShrinkedCognitiveMap(BaseCognitiveMap):
             maxiter=maxiter,
             seed=1)
         self.weights = result.x.reshape(self.n-1, self.n)
-        # print(self.weights)
+        return result.nit
 
     def get_error(self, input_in_time):
         expected_output = input_in_time[1:]

@@ -18,7 +18,7 @@ class DECognitiveMap(BaseCognitiveMap):
         buff = DECognitiveMap.f((x.reshape(n, -1)).dot(expected_input)) - expected_output
         return np.mean(np.multiply(buff, buff))
 
-    def train(self, inputs_in_time, maxiter=100):
+    def train(self, inputs_in_time, maxiter=1):
         expected_input = []
         expected_output = []
         for input_in_time in inputs_in_time:
@@ -34,7 +34,7 @@ class DECognitiveMap(BaseCognitiveMap):
             maxiter=maxiter,
             seed=1)
         self.weights = result.x.reshape(self.n, -1)
-        # print(self.weights)
+        return result.nit
 
     def get_error(self, input_in_time):
         expected_output = input_in_time[1:]

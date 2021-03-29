@@ -1,5 +1,7 @@
-# flake8: noqa
 import matplotlib.pyplot as plt
+import numpy as np
+import imageio
+import os
 
 def draw_trajectory_with_predictions(xs, model, savepath):
     predictions = model.predict(xs)
@@ -27,3 +29,22 @@ def draw_trajectory_with_predictions(xs, model, savepath):
     ax.grid()
     plt.savefig(savepath)
     plt.close()
+
+
+def draw_trajectory_predictions_gif(xs, model, savedir, gif_filename):
+    unique_prefix = int(np.random.random()*10000)
+    filenames = []
+    for i in range(len(xs)-1):
+        filename = savedir / f"{unique_prefix}_step_{i}.png"
+        draw_trajectory_with_predictions(
+            [xs[i], xs[i+1]],
+            model,
+            filename
+        )
+        filenames.append(filename)
+
+    with imageio.get_writer(str(savedir / f"{gif_filename}.gif"), mode='I') as writer:
+        for filename in filenames:
+            image = imageio.imread(filename)
+            writer.append_data(image)
+            os.remove(filename)

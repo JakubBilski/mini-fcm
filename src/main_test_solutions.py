@@ -48,7 +48,7 @@ def test_solution(
     csv_results_file = open(csv_results_path, 'w', newline='')
     csv_writer = csv.writer(csv_results_file)
     csv_writer.writerow(['dataset', 'no_classes', 'method'])
-    csv_writer.writerow([dataset_name, no_classes, solution_name])
+    csv_writer.writerow([dataset_name, no_classes, solution_name + " 1it"])
     csv_writer.writerow(['no_states', 'accuracy', 'degenerated_share'])
 
     for no_states in range(2, 11):

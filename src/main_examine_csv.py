@@ -161,11 +161,13 @@ if __name__ == "__main__":
 
     hmm_dir = pathlib.Path('plots\\picked\\hmm_classification_results')
     fcm_dir = pathlib.Path('plots\\picked\\tau_5_decm_tests\\csvs')
-    param_dir = pathlib.Path('plots\\picked\\tau_2dot5_decm_tests\\csvs')
-    csv_dirs = [fcm_dir, hmm_dir, param_dir]
+    decm1c_dir = pathlib.Path('plots\\picked\\decm_1c')
+    hmm1c_dir = pathlib.Path('plots\\picked\\hmm_1c')
+
+    csv_dirs = [fcm_dir, hmm_dir, decm1c_dir, hmm1c_dir]
     
-    all_dir = pathlib.Path('D:\\Projekty\\fcm\\mini-fcm\\plots\\picked\\arrowhead_tau_examination')
-    csv_dirs = [all_dir]
+    # all_dir = pathlib.Path('D:\\Projekty\\fcm\\mini-fcm\\plots\\picked\\arrowhead_tau_examination')
+    # csv_dirs = [all_dir]
 
     compare_classification_results(csv_dirs, plots_dir)
-    compare_degeneration_results(csv_dirs, plots_dir)
+    # compare_degeneration_results(csv_dirs, plots_dir)

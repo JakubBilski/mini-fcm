@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from cognitiveMaps.baseCognitiveMap import BaseCognitiveMap
 from scipy.optimize import differential_evolution
@@ -16,9 +18,9 @@ class DECognitiveMap(BaseCognitiveMap):
         expected_input = args[1]
         expected_output = args[2]
         buff = DECognitiveMap.f((x.reshape(n, -1)).dot(expected_input)) - expected_output
-        return np.mean(np.multiply(buff, buff))
+        return np.sum(np.multiply(buff, buff))
 
-    def train(self, inputs_in_time, maxiter=1):
+    def train(self, inputs_in_time, max_iter=100):
         expected_input = []
         expected_output = []
         for input_in_time in inputs_in_time:
@@ -31,10 +33,13 @@ class DECognitiveMap(BaseCognitiveMap):
             DECognitiveMap._minimized_function,
             bounds,
             (self.n, expected_input, expected_output),
-            maxiter=maxiter,
+            maxiter=max_iter,
+            strategy='rand1bin',
+            mutation=0.8,
+            recombination=0.9,
+            init='random',
             seed=1)
         self.weights = result.x.reshape(self.n, -1)
-        return result.nit
 
     def get_error(self, input_in_time):
         expected_output = input_in_time[1:]
@@ -42,8 +47,7 @@ class DECognitiveMap(BaseCognitiveMap):
         expected_output = np.array(expected_output).transpose()
         expected_input = np.array(expected_input).transpose()
         error = DECognitiveMap.f(self.weights.dot(expected_input)) - expected_output
-        error = np.mean(np.multiply(error, error))
-        return error/(len(expected_input)*self.n)
+        return np.mean(np.multiply(error, error))
 
     def predict(self, input_in_time):
         expected_input = input_in_time[:-1]

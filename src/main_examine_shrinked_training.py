@@ -8,6 +8,7 @@ import argparse
 import numpy as np
 
 from cognitiveMaps.deCognitiveMap import DECognitiveMap
+from cognitiveMaps.psoCognitiveMap import PSOCognitiveMap
 from cognitiveMaps.deShrinkedCognitiveMap import DEShrinkedCognitiveMap
 from cognitiveMaps.deVeryShrinkedCognitiveMap import DEVeryShrinkedCognitiveMap
 from cognitiveMaps.hmm import HMM
@@ -36,6 +37,8 @@ def test_solution_step_by_step(
     
     if solution_name in ['fcm nn', 'fcm 1c']:
         model_class = DECognitiveMap
+    elif solution_name in ['pso nn']:
+        model_class = PSOCognitiveMap
     elif solution_name == 'sfcm nn':
         model_class = DEShrinkedCognitiveMap
     elif solution_name == 'vsfcm nn':
@@ -67,40 +70,41 @@ def test_solution_step_by_step(
     else:
         learning_input = [([xs], y) for xs, y in zip(transformed_train_xses_series, train_ys)]
 
-    models_converged = [False for _ in range(len(learning_input))]
     train_models = [None for _ in range(len(learning_input))]
     train_errors = [None for _ in range(len(learning_input))]
 
-    for maxiter in range(1, 2000, 100):
-        print(f'\nlearning train models with max iter {maxiter}')
-        for i in range(len(learning_input)):
-            if not models_converged[i]:
-                model = model_class(no_states)
-                nit = model.train(learning_input[i][0], maxiter=maxiter)
-                if nit < maxiter:
-                    models_converged[i] = True
-                if nit > maxiter:
-                    raise Exception("wow")
-                model.set_class(learning_input[i][1])
-                train_models[i] = model
-                train_errors[i] = model.get_error(learning_input[i][0][0])
-        
-        print(f"Example weights:")
-        print(train_models[0].weights)
-        converged_share = np.sum(models_converged)/len(models_converged)
-        mean_train_error = np.mean(train_errors)
-        degenerated_share = basicExamining.get_share_of_degenerated_weights(train_models, 0.99)
-        accuracy = accuracyComparing.get_accuracy_fcm_best_prediction(
-            train_models=train_models,
-            test_xs=transformed_test_xses_series,
-            test_classes=test_ys
-        )
+    print(f'learning models')
+    for i in tqdm(range(len(learning_input))):
+        model = model_class(no_states)
+        nit = model.train(learning_input[i][0])
+        model.set_class(learning_input[i][1])
+        train_models[i] = model
+        train_errors[i] = model.get_error(learning_input[i][0][0])
+    
+    mean_train_error = np.mean(train_errors)
+    degenerated_share = basicExamining.get_share_of_degenerated_weights(train_models, 0.99)
+    accuracy = accuracyComparing.get_accuracy_fcm_best_prediction(
+        train_models=train_models,
+        test_xs=transformed_test_xses_series,
+        test_classes=test_ys
+    )
+    print(f"Example weights:")
+    print(train_models[0].weights)
+    print(f"Example error: {train_errors[0]}")
 
-        csv_writer.writerow([no_states, accuracy, degenerated_share, mean_train_error, converged_share])
-        print(f'accuracy: {accuracy}')
-        print(f'share of degenerated weights: {degenerated_share}')
-        print(f'mean of training errors: {mean_train_error}')
-        print(f'converged share: {converged_share}')
+    random_errors = []
+    for i in range(10):
+        model = DECognitiveMap(no_states)
+        model.weights = np.random.random((no_states,no_states))
+        random_errors.append(model.get_error(learning_input[0][0][0]))
+    
+    print(f"Mean random error {np.mean(random_errors)}")
+    print(f"Best random error {np.min(random_errors)}")
+
+    csv_writer.writerow([no_states, accuracy, degenerated_share, mean_train_error])
+    print(f'accuracy: {accuracy}')
+    print(f'share of degenerated weights: {degenerated_share}')
+    print(f'mean of training errors: {mean_train_error}')
     
     csv_results_file.close()
 
@@ -136,7 +140,7 @@ def parse_args():
         description='Test classification accuracy on TimeSeriesClassification datasets')
     parser.add_argument('--solution',
                         '-s',
-                        choices=['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn'],
+                        choices=['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn', 'pso nn'],
                         default='sfcm nn',
                         help='How models used during classification will be trained',
                         type=str)
@@ -154,7 +158,7 @@ if __name__ == "__main__":
     datasets = univariateDatasets.DATASETS_NAMES_WITH_NUMBER_OF_CLASSES
     datasets = [datasets[5]]
 
-    no_states = 3
+    no_states = 5
 
     for dataset_name, no_classes in datasets:
         print(f"Preprocessing {dataset_name}")

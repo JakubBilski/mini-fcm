@@ -18,7 +18,7 @@ class DEVeryShrinkedCognitiveMap(BaseCognitiveMap):
         buff = DEVeryShrinkedCognitiveMap.f((x.reshape(n-1, n)).dot(expected_input)) - expected_output
         return np.mean(np.multiply(buff, buff))
 
-    def train(self, inputs_in_time, maxiter=100):
+    def train(self, inputs_in_time, maxiter=200):
         expected_input = []
         expected_output = []
         for input_in_time in inputs_in_time:

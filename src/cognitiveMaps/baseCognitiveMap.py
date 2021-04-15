@@ -1,7 +1,5 @@
 import numpy as np
 
-from . import displaying
-
 SIGMOID_L = 1.0
 SIGMOID_TAU = 5.0
 
@@ -34,9 +32,6 @@ class BaseCognitiveMap:
             # print(output[1])
             output, buffer = buffer, output
         self.conv_pnt = output
-
-    def display_plot(self, save_path=None):
-        displaying.draw_cognitive_map(self.weights, self.class_name, save_path)
 
     def set_class(self, class_name):
         self.class_name = class_name

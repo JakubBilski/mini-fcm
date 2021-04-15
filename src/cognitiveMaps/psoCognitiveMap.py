@@ -22,7 +22,7 @@ class PSOCognitiveMap(BaseCognitiveMap):
         return results
 
 
-    def train(self, inputs_in_time, max_iter=1000):
+    def train(self, inputs_in_time, max_iter=200):
         expected_input = []
         expected_output = []
         for input_in_time in inputs_in_time:
@@ -53,6 +53,7 @@ class PSOCognitiveMap(BaseCognitiveMap):
             expected_output=expected_output)
 
         self.weights = pos.reshape(self.n, -1)
+        return max_iter
 
     def get_error(self, input_in_time):
         expected_output = input_in_time[1:]

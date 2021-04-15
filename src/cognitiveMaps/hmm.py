@@ -43,6 +43,7 @@ class HMM:
             raise Exception("Unable to learn a valid model")
 
         self.model = max(models_with_scores, key=lambda ms: ms[1])[0]
+        return self.model.monitor_.iter
 
     def get_emission_probability(self, input_in_time):
         return self.model.score(input_in_time)

@@ -105,25 +105,28 @@ def test_bare_methods_on_simple_function(no_dimensions, simple_function, simple_
     pso_time = 0.0
     de_time = 0.0
 
-    no_real_calls = []
-    no_declared_calls = []
+    no_de_calls = []
+    no_pso_calls = []
 
     for max_iter in max_iter_range:
         start_timestamp = time.time()
-        optimizer = ps.single.GlobalBestPSO(
-            n_particles=10*no_dimensions,
-            dimensions=no_dimensions,
-            options=options,
-            bounds=bounds_pso)
-
-        cost, pos = optimizer.optimize(
-            simple_function_for_training_pso,
-            iters=max_iter,
-            verbose=False)
+        CALL_COUNTERS.FUNCTION_CALL_COUNTER = 0
+        result = differential_evolution(
+            simple_function,
+            bounds_de,
+            None,
+            maxiter=max_iter,
+            popsize=10,
+            strategy='rand1bin',
+            mutation=0.8,
+            recombination=0.9,
+            init='random',
+            seed=1)
 
         pso_time += time.time() - start_timestamp
+        no_pso_calls.append(CALL_COUNTERS.FUNCTION_CALL_COUNTER)
         
-        pso_error = simple_function(pos)
+        pso_error = simple_function(result.x)
         pso_errors.append(pso_error)
 
         start_timestamp = time.time()
@@ -145,8 +148,7 @@ def test_bare_methods_on_simple_function(no_dimensions, simple_function, simple_
             init=wrong_init,
             seed=1)
 
-        no_real_calls.append(CALL_COUNTERS.FUNCTION_CALL_COUNTER)
-        no_declared_calls.append((max_iter+1)*10*no_dimensions)
+        no_de_calls.append(CALL_COUNTERS.FUNCTION_CALL_COUNTER)
         
         # print(f"After {result.nit} iters, call counter: {no_real_calls}")
         # print(f"Declared call counter: {no_declared_calls}")
@@ -160,7 +162,7 @@ def test_bare_methods_on_simple_function(no_dimensions, simple_function, simple_
 
     print(f"pso time: {pso_time}")
     print(f"de time: {de_time}")
-    return list(max_iter_range), de_errors, pso_errors, de_time, pso_time, no_real_calls, no_declared_calls
+    return list(max_iter_range), de_errors, pso_errors, de_time, pso_time, no_de_calls, no_pso_calls
 
 
 def display_results(xs, de_errors, pso_errors, title):
@@ -182,7 +184,7 @@ if __name__ == "__main__":
     pso_times = []
     # de_iters = []
 
-    dimensions_range = [4, 9, 16]
+    dimensions_range = [5]
     for no_dimensions in dimensions_range:
         print(f"no_dimensions {no_dimensions}")
         # xs, de_errors, pso_errors, de_time, pso_time, de_real, de_declared = test_bare_methods_on_simple_function(no_dimensions, _constant0dot5, _constant0dot5_for_training_pso)

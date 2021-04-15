@@ -173,12 +173,12 @@ def cross_validation_folds(xses_series, ys, k):
 
 if __name__ == "__main__":
 
-    tested_datasets = [univariateDatasets.DATASETS_NAMES_WITH_NUMBER_OF_CLASSES[4]]
+    tested_datasets = univariateDatasets.DATASETS_NAMES_WITH_NUMBER_OF_CLASSES
 
     # tested_solutions = ['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn', 'pso nn']
-    tested_solutions = ['fcm nn', 'vsfcm nn', 'pso nn']
+    tested_solutions = ['vsfcm nn', 'fcm nn', 'pso nn']
 
-    tested_nos_states = [4]
+    tested_nos_states = [3, 5, 8]
 
     os.mkdir(plots_dir)
 
@@ -211,6 +211,8 @@ if __name__ == "__main__":
 
         for solution_name in tested_solutions:
             max_iter = 200
+            if solution_name == "pso nn":
+                max_iter = 1000
             for no_states in tested_nos_states:
                 for f in range(len(folds)):
                     fold_train_xses_series = folds[f][0]

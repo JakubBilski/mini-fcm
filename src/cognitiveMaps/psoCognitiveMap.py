@@ -22,7 +22,7 @@ class PSOCognitiveMap(BaseCognitiveMap):
         return results
 
 
-    def train(self, inputs_in_time, max_iter=500):
+    def train(self, inputs_in_time, max_iter=1000):
         expected_input = []
         expected_output = []
         for input_in_time in inputs_in_time:
@@ -47,6 +47,7 @@ class PSOCognitiveMap(BaseCognitiveMap):
         cost, pos = optimizer.optimize(
             PSOCognitiveMap._minimized_function,
             iters=max_iter,
+            verbose=False,
             n=self.n,
             expected_input=expected_input,
             expected_output=expected_output)

@@ -6,10 +6,7 @@ from scipy.optimize import differential_evolution
 
 class DEVeryShrinkedCognitiveMap(BaseCognitiveMap):
     def __init__(self, n):
-        self.class_name = ""
-        self.weights = np.random.rand(n, n)
         self.n = n
-        self.conv_pnt = None
 
     def _minimized_function(x, *args):
         n = args[0]
@@ -40,8 +37,7 @@ class DEVeryShrinkedCognitiveMap(BaseCognitiveMap):
         expected_output = np.asarray(input_in_time[1:])[:, :-1]
         computed_output = self.predict(input_in_time)
         error = computed_output - expected_output
-        error = np.mean(np.multiply(error, error))
-        return error/(len(expected_output)*self.n)
+        return np.mean(np.multiply(error, error))
 
     def predict(self, input_in_time):
         expected_input = input_in_time[:-1]

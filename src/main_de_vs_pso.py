@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pathlib
 import time
-import pyswarms as ps
 from scipy.optimize import differential_evolution
 
 from loadingData import univariateDatasets
@@ -13,6 +12,7 @@ from loadingData import loadSktime
 from transformingData import cmeans
 from transformingData import derivatives
 from transformingData import normalizing
+
 
 class CALL_COUNTERS:
     FUNCTION_CALL_COUNTER = 0
@@ -149,7 +149,7 @@ def test_bare_methods_on_simple_function(no_dimensions, simple_function, simple_
             seed=1)
 
         no_de_calls.append(CALL_COUNTERS.FUNCTION_CALL_COUNTER)
-        
+
         # print(f"After {result.nit} iters, call counter: {no_real_calls}")
         # print(f"Declared call counter: {no_declared_calls}")
 
@@ -173,7 +173,6 @@ def display_results(xs, de_errors, pso_errors, title):
     ax.set_title(title)
     plt.show()
     plt.close()
-
 
 
 if __name__ == "__main__":
@@ -205,18 +204,16 @@ if __name__ == "__main__":
 
     axs[0].legend()
     axs[1].legend()
-    axs[0].set_title(f"Differential evolution with very bad init minimizing BirdChicken")
-    axs[1].set_title(f"PSO minimizing BeetleFly")
+    axs[0].set_title("Differential evolution with very bad init minimizing BirdChicken")
+    axs[1].set_title("PSO minimizing BeetleFly")
     plt.show()
     plt.close()
 
-    display_results(list(dimensions_range), de_times, pso_times, "Time of execution [s]")
-
-
-
-    # no_dimensions = 2
-    # xs, de_errors, pso_errors = test_bare_methods_on_simple_function(no_dimensions, _cos10x, _cos10x_for_training_pso)
-    # display_results(xs, de_errors, pso_errors, f"cos(10x), dim(x)={no_dimensions}")
+    display_results(
+        list(dimensions_range),
+        de_times,
+        pso_times,
+        "Time of execution [s]")
 
 
 if __name__ == "__mainasdasd__":
@@ -248,7 +245,7 @@ if __name__ == "__mainasdasd__":
         execution_times.append(time.time() - starting_timestamp)
         costs.append(_cos10x(result.x))
         call_counters.append(CALL_COUNTERS.FUNCTION_CALL_COUNTER / busy_iter)
-    
+
     fig, axs = plt.subplots(3)
 
     fig.suptitle('Minimizing cos(10x) with differential evolution')
@@ -260,4 +257,3 @@ if __name__ == "__mainasdasd__":
     axs[2].set_title("Number of function calls")
     plt.show()
     plt.close()
-

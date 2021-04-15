@@ -3,14 +3,15 @@ import numpy as np
 import imageio
 import os
 
+
 def draw_trajectory_with_predictions(xs, model, savepath):
     predictions = model.predict(xs)
     fig, ax = plt.subplots()
     plot_xs = [x[0] for x in xs]
     plot_ys = [x[1] for x in xs]
     arrow_width = 0.005
-    ax.set_xlim([0,1])
-    ax.set_ylim([0,1])
+    ax.set_xlim([0, 1])
+    ax.set_ylim([0, 1])
     ax.scatter(
         plot_xs,
         plot_ys,
@@ -22,7 +23,7 @@ def draw_trajectory_with_predictions(xs, model, savepath):
             predictions[i][0] - plot_xs[i],
             predictions[i][1] - plot_ys[i],
             color='green',
-            length_includes_head = True,
+            length_includes_head=True,
             width=arrow_width
         )
 
@@ -43,7 +44,8 @@ def draw_trajectory_predictions_gif(xs, model, savedir, gif_filename):
         )
         filenames.append(filename)
 
-    with imageio.get_writer(str(savedir / f"{gif_filename}.gif"), mode='I') as writer:
+    img_path = str(savedir / f"{gif_filename}.gif")
+    with imageio.get_writer(img_path, mode='I') as writer:
         for filename in filenames:
             image = imageio.imread(filename)
             writer.append_data(image)

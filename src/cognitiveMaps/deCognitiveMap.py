@@ -1,6 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from tqdm import tqdm
 
 from cognitiveMaps.baseCognitiveMap import BaseCognitiveMap
 from scipy.optimize import differential_evolution
@@ -8,10 +6,7 @@ from scipy.optimize import differential_evolution
 
 class DECognitiveMap(BaseCognitiveMap):
     def __init__(self, n):
-        self.class_name = ""
-        self.weights = np.random.rand(n, n)
         self.n = n
-        self.conv_pnt = None
 
     def _minimized_function(x, *args):
         n = args[0]

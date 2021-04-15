@@ -1,12 +1,9 @@
 # flake8: noqa
-from numpy.lib.arraysetops import unique
-from tqdm import tqdm
 import pathlib
 import os
 import csv
 import time
 from datetime import datetime
-import argparse
 
 from cognitiveMaps.psoCognitiveMap import PSOCognitiveMap
 from cognitiveMaps.deCognitiveMap import DECognitiveMap
@@ -18,9 +15,8 @@ from transformingData import cmeans
 from transformingData import derivatives
 from transformingData import normalizing
 from testingResults import accuracyComparing
+from testingResults import mapsExamining
 from loadingData import loadSktime
-from examiningData import displaying
-from examiningData import basicExamining
 
 plots_dir = pathlib.Path(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}\\')
 
@@ -112,14 +108,13 @@ def test_solution(
     complete_execution_time = time.time() - execution_start_timestamp
     
     if solution_name in ['fcm nn', 'fcm 1c', 'sfcm nn', 'vsfcm nn', 'pso nn']:
-        degenerated_share = basicExamining.get_share_of_degenerated_weights(train_models, 0.99)
+        degenerated_share = mapsExamining.get_share_of_degenerated_weights(train_models, threshold=0.99)
     else:
         degenerated_share = "?"
 
     if error_occured:
         print(f"error occured for no_states {no_states}. Continuing")
     else:
-        
         row = [
             dataset_name,
             solution_name,

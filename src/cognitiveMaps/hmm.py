@@ -7,13 +7,13 @@ class HMM:
         self.class_name = ""
         self.n = n
 
-    def train(self, inputs_in_time, no_random_initializations=100):
+    def train(self, inputs_in_time, max_iter=100, no_random_initializations=100):
         concatenated_inputs = np.concatenate(inputs_in_time)
         lengths = [len(x) for x in inputs_in_time]
         warnings.filterwarnings(action='ignore', category=RuntimeWarning)
         models_with_scores = []
         for i in range(no_random_initializations):
-            new_model = GaussianHMM(n_components=self.n, covariance_type="diag", n_iter=1000, init_params="")
+            new_model = GaussianHMM(n_components=self.n, covariance_type="diag", n_iter=max_iter, init_params="")
             random_transmat = np.random.rand(self.n, self.n)
             random_transmat = random_transmat / random_transmat.sum(1, keepdims=True)
             new_model.transmat_ = random_transmat

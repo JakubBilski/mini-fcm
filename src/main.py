@@ -34,6 +34,7 @@ def test_solution(
     no_classes,
     dataset_name,
     no_states,
+    max_iter,
     fold_no,
     additional_info,
     csv_results_path):
@@ -81,7 +82,7 @@ def test_solution(
     for i in range(len(learning_input)):
         model = model_class(no_states)
         try:
-            nit = model.train(learning_input[i][0])
+            nit = model.train(learning_input[i][0], max_iter)
             nits.append(nit)
         except:
             error_occured = True
@@ -125,6 +126,7 @@ def test_solution(
             fold_no,
             additional_info,
             no_states,
+            max_iter,
             accuracy,
             degenerated_share,
             mean_nit,
@@ -176,12 +178,12 @@ def cross_validation_folds(xses_series, ys, k):
 
 if __name__ == "__main__":
 
-    tested_datasets = [univariateDatasets.DATASETS_NAMES_WITH_NUMBER_OF_CLASSES[3]]
+    tested_datasets = [univariateDatasets.DATASETS_NAMES_WITH_NUMBER_OF_CLASSES[4]]
 
     # tested_solutions = ['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn', 'pso nn']
     tested_solutions = ['fcm nn', 'vsfcm nn', 'pso nn']
 
-    tested_nos_states = [5]
+    tested_nos_states = [4]
 
     os.mkdir(plots_dir)
 
@@ -194,6 +196,7 @@ if __name__ == "__main__":
         'fold_no',
         'additional_info',
         'no_states',
+        'maxiter',
         'accuracy',
         'degenerated_share',
         'mean_no_iterations',
@@ -208,11 +211,11 @@ if __name__ == "__main__":
             test_path=pathlib.Path(f'./data/Univariate/{dataset_name}/{dataset_name}_TEST.ts'),
             train_path=pathlib.Path(f'./data/Univariate/{dataset_name}/{dataset_name}_TRAIN.ts'),
             derivative_order=1)
-        
 
         folds = cross_validation_folds(train_xses_series, train_ys, 3)
 
         for solution_name in tested_solutions:
+            max_iter = 200
             for no_states in tested_nos_states:
                 for f in range(len(folds)):
                     fold_train_xses_series = folds[f][0]
@@ -228,6 +231,7 @@ if __name__ == "__main__":
                         no_classes,
                         dataset_name,
                         no_states,
+                        max_iter,
                         f,
                         "",
                         csv_results_path)

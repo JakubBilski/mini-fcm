@@ -3,6 +3,7 @@ import pathlib
 import os
 import csv
 import time
+import itertools
 from datetime import datetime
 
 from cognitiveMaps.psoCognitiveMap import PSOCognitiveMap
@@ -10,7 +11,6 @@ from cognitiveMaps.deCognitiveMap import DECognitiveMap
 from cognitiveMaps.deShrinkedCognitiveMap import DEShrinkedCognitiveMap
 from cognitiveMaps.deVeryShrinkedCognitiveMap import DEVeryShrinkedCognitiveMap
 from cognitiveMaps.hmm import HMM
-from loadingData import univariateDatasets
 from transformingData import cmeans
 from transformingData import derivatives
 from transformingData import normalizing
@@ -18,6 +18,7 @@ from modelAnalysis import accuracyComparing
 from modelAnalysis import nnPredicting
 from modelAnalysis import mapsExamining
 from loadingData import loadSktime
+from loadingData import univariateDatasets
 
 plots_dir = pathlib.Path(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}\\')
 
@@ -169,17 +170,7 @@ def cross_validation_folds(xses_series, ys, k):
 
 if __name__ == "__main__":
 
-    tested_datasets = univariateDatasets.DATASETS_NAMES_WITH_NUMBER_OF_CLASSES
-
-    # tested_solutions = ['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn', 'pso nn']
-    tested_solutions = ['hmm nn']
-
-    tested_nos_states = [6]
-
-    nos_random_initializations = [1, 10, 100]
-
     os.mkdir(plots_dir)
-
     csv_results_path=plots_dir / f'classification_results.csv'
     csv_results_file = open(csv_results_path, 'w', newline='')
     csv_writer = csv.writer(csv_results_file)
@@ -200,7 +191,21 @@ if __name__ == "__main__":
         'no_random_initializations'])
     csv_results_file.close()
 
-    for dataset_name, no_classes in tested_datasets:
+    tested_datasets = [name for name, _ in univariateDatasets.DATASETS_NAMES_WITH_NUMBER_OF_CLASSES]
+    # tested_methods = ['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn', 'pso nn']
+    tested_methods = ['hmm nn']
+    tested_nos_states = [3]
+    tested_max_iters = [1, 10, 100]
+    tested_nos_random_initializations = [1, 10, 100]
+
+    parameters = itertools.product(
+        tested_methods,
+        tested_nos_states,
+        tested_max_iters,
+        tested_nos_random_initializations
+    )
+
+    for dataset_name in tested_datasets:
         print(f"Preprocessing {dataset_name}")
         train_xses_series, train_ys, test_xses_series, test_ys = load_preprocessed_data(
             test_path=pathlib.Path(f'./data/Univariate/{dataset_name}/{dataset_name}_TEST.ts'),
@@ -209,28 +214,23 @@ if __name__ == "__main__":
 
         folds = cross_validation_folds(train_xses_series, train_ys, 3)
 
-        for solution_name in tested_solutions:
-            max_iter = 200
-            if solution_name == "pso nn":
-                max_iter = 1000
-            for no_states in tested_nos_states:
-                for no_rand_init in nos_random_initializations:
-                    for f in range(len(folds)):
-                        fold_train_xses_series = folds[f][0]
-                        fold_train_ys = folds[f][1]
-                        fold_validation_xses_series = folds[f][2]
-                        fold_validation_ys = folds[f][3]
-                        test_solution(
-                            solution_name,
-                            fold_validation_xses_series,
-                            fold_validation_ys,
-                            fold_train_xses_series,
-                            fold_train_ys,
-                            no_classes,
-                            dataset_name,
-                            no_states,
-                            max_iter,
-                            f,
-                            "",
-                            csv_results_path,
-                            no_random_initializations=no_rand_init)
+        for method_name, no_states, max_iter, no_rand_init in parameters:
+            for f in range(len(folds)):
+                fold_train_xses_series = folds[f][0]
+                fold_train_ys = folds[f][1]
+                fold_validation_xses_series = folds[f][2]
+                fold_validation_ys = folds[f][3]
+                test_solution(
+                    method_name,
+                    fold_validation_xses_series,
+                    fold_validation_ys,
+                    fold_train_xses_series,
+                    fold_train_ys,
+                    no_states,
+                    dataset_name,
+                    no_states,
+                    max_iter,
+                    f,
+                    "",
+                    csv_results_path,
+                    no_random_initializations=no_rand_init)

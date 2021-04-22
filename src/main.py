@@ -111,9 +111,9 @@ def test_solution(
                 return
         else:
             nit = model.train(learning_input[i][0], max_iter, mutation, recombination, popsize)
-            nits.append(nit)
-            model.set_class(learning_input[i][1])
-            train_models.append(model)
+        nits.append(nit)
+        model.set_class(learning_input[i][1])
+        train_models.append(model)
     mean_nit = sum(nits) / len(nits)
     max_nit = max(nits)
 

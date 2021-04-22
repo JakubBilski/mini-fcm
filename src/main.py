@@ -14,8 +14,9 @@ from loadingData import univariateDatasets
 from transformingData import cmeans
 from transformingData import derivatives
 from transformingData import normalizing
-from testingResults import accuracyComparing
-from testingResults import mapsExamining
+from modelAnalysis import accuracyComparing
+from modelAnalysis import nnPredicting
+from modelAnalysis import mapsExamining
 from loadingData import loadSktime
 
 plots_dir = pathlib.Path(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}\\')
@@ -33,7 +34,8 @@ def test_solution(
     max_iter,
     fold_no,
     additional_info,
-    csv_results_path):
+    csv_results_path,
+    no_random_initializations='?'):
     
     if solution_name in ['hmm nn', 'hmm 1c']:
         model_class = HMM
@@ -72,38 +74,33 @@ def test_solution(
     else:
         learning_input = [([xs], y) for xs, y in zip(transformed_train_xses_series, train_ys)]
 
-    error_occured = False
     nits = []
     train_models = []
     for i in range(len(learning_input)):
         model = model_class(no_states)
-        try:
+        if solution_name in ['hmm nn', 'hmm 1c']:
+            nit = model.train(learning_input[i][0], max_iter, no_random_initializations)
+        else:
             nit = model.train(learning_input[i][0], max_iter)
-            nits.append(nit)
-        except:
-            error_occured = True
-            break
+        nits.append(nit)
         model.set_class(learning_input[i][1])
         train_models.append(model)
     mean_nit = sum(nits) / len(nits)
     max_nit = max(nits)
 
-    if not error_occured:
-        try:
-            if solution_name in ['hmm nn', 'hmm 1c']:
-                accuracy = accuracyComparing.get_accuracy_hmm_best_prediction(
-                    train_models=train_models,
-                    test_xs=transformed_test_xses_series,
-                    test_classes=test_ys
-                )
-            else:
-                accuracy = accuracyComparing.get_accuracy_fcm_best_prediction(
-                    train_models=train_models,
-                    test_xs=transformed_test_xses_series,
-                    test_classes=test_ys
-                )
-        except:
-            error_occured = True
+    if solution_name in ['hmm nn', 'hmm 1c']:
+        predicted = nnPredicting.predict_nn_hmm(
+            train_models=train_models,
+            test_xs=transformed_test_xses_series
+        )
+    else:
+        predicted = nnPredicting.predict_nn_hmm(
+            train_models=train_models,
+            test_xs=transformed_test_xses_series
+        )
+
+    accuracy = accuracyComparing.get_accuracy(predicted, test_ys)
+    mcc = accuracyComparing.get_mcc(predicted, test_ys)
 
     complete_execution_time = time.time() - execution_start_timestamp
     
@@ -112,24 +109,23 @@ def test_solution(
     else:
         degenerated_share = "?"
 
-    if error_occured:
-        print(f"error occured for no_states {no_states}. Continuing")
-    else:
-        row = [
-            dataset_name,
-            solution_name,
-            fold_no,
-            additional_info,
-            no_states,
-            max_iter,
-            accuracy,
-            degenerated_share,
-            mean_nit,
-            max_nit,
-            complete_execution_time,
-            cmeans_execution_time]
-        csv_writer.writerow(row)
-        print(row)
+    row = [
+        dataset_name,
+        solution_name,
+        fold_no,
+        additional_info,
+        no_states,
+        max_iter,
+        accuracy,
+        mcc,
+        degenerated_share,
+        mean_nit,
+        max_nit,
+        complete_execution_time,
+        cmeans_execution_time,
+        no_random_initializations]
+    csv_writer.writerow(row)
+    print(row)
 
     csv_results_file.close()
 
@@ -176,9 +172,11 @@ if __name__ == "__main__":
     tested_datasets = univariateDatasets.DATASETS_NAMES_WITH_NUMBER_OF_CLASSES
 
     # tested_solutions = ['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn', 'pso nn']
-    tested_solutions = ['vsfcm nn', 'fcm nn', 'pso nn']
+    tested_solutions = ['hmm nn']
 
-    tested_nos_states = [3, 5, 8]
+    tested_nos_states = [6]
+
+    nos_random_initializations = [1, 10, 100]
 
     os.mkdir(plots_dir)
 
@@ -193,11 +191,13 @@ if __name__ == "__main__":
         'no_states',
         'maxiter',
         'accuracy',
+        'mcc',
         'degenerated_share',
         'mean_no_iterations',
         'max_no_iterations',
         'complete_execution_time',
-        'cmeans_time'])
+        'cmeans_time',
+        'no_random_initializations'])
     csv_results_file.close()
 
     for dataset_name, no_classes in tested_datasets:
@@ -214,21 +214,23 @@ if __name__ == "__main__":
             if solution_name == "pso nn":
                 max_iter = 1000
             for no_states in tested_nos_states:
-                for f in range(len(folds)):
-                    fold_train_xses_series = folds[f][0]
-                    fold_train_ys = folds[f][1]
-                    fold_validation_xses_series = folds[f][2]
-                    fold_validation_ys = folds[f][3]
-                    test_solution(
-                        solution_name,
-                        fold_validation_xses_series,
-                        fold_validation_ys,
-                        fold_train_xses_series,
-                        fold_train_ys,
-                        no_classes,
-                        dataset_name,
-                        no_states,
-                        max_iter,
-                        f,
-                        "",
-                        csv_results_path)
+                for no_rand_init in nos_random_initializations:
+                    for f in range(len(folds)):
+                        fold_train_xses_series = folds[f][0]
+                        fold_train_ys = folds[f][1]
+                        fold_validation_xses_series = folds[f][2]
+                        fold_validation_ys = folds[f][3]
+                        test_solution(
+                            solution_name,
+                            fold_validation_xses_series,
+                            fold_validation_ys,
+                            fold_train_xses_series,
+                            fold_train_ys,
+                            no_classes,
+                            dataset_name,
+                            no_states,
+                            max_iter,
+                            f,
+                            "",
+                            csv_results_path,
+                            no_random_initializations=no_rand_init)

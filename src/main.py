@@ -85,11 +85,35 @@ def test_solution(
         model = model_class(no_states)
         if solution_name in ['hmm nn', 'hmm 1c']:
             nit = model.train(learning_input[i][0], max_iter, no_random_initializations, covariance_type)
+            if nit is None:
+                row = [
+                    dataset_name,
+                    solution_name,
+                    fold_no,
+                    additional_info + "failed to learn one of the models",
+                    no_states,
+                    max_iter,
+                    '?',
+                    '?',
+                    '?',
+                    '?',
+                    '?',
+                    '?',
+                    '?',
+                    no_random_initializations,
+                    covariance_type,
+                    mutation,
+                    recombination,
+                    popsize]
+                csv_writer.writerow(row)
+                print(row)
+                csv_results_file.close()
+                return
         else:
             nit = model.train(learning_input[i][0], max_iter, mutation, recombination, popsize)
-        nits.append(nit)
-        model.set_class(learning_input[i][1])
-        train_models.append(model)
+            nits.append(nit)
+            model.set_class(learning_input[i][1])
+            train_models.append(model)
     mean_nit = sum(nits) / len(nits)
     max_nit = max(nits)
 
@@ -204,15 +228,26 @@ if __name__ == "__main__":
     csv_results_file.close()
 
     tested_datasets = univariateDatasets.DATASETS_NAME_TO_NUMBER_OF_CLASSES.keys()
+
     # tested_methods = ['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn', 'pso nn']
-    tested_methods = ['fcm nn']
+
+    # tested_methods = ['fcm nn']
+    # tested_nos_states = [3, 4, 5, 6, 7]
+    # tested_max_iters = [150, 200, 250]
+    # tested_nos_random_initializations = ['?']
+    # tested_covariance_types = ['?']
+    # tested_mutations = [0.5, 0.8]
+    # tested_recombinations = [0.5, 0.9]
+    # tested_popsizes = [10, 15]
+
+    tested_methods = ['hmm nn']
     tested_nos_states = [3, 4, 5, 6, 7]
-    tested_max_iters = [150, 200, 250]
-    tested_nos_random_initializations = ['?']
-    tested_covariance_types = ['?']
-    tested_mutations = [0.5, 0.8]
-    tested_recombinations = [0.5, 0.9]
-    tested_popsizes = [10, 15]
+    tested_max_iters = [50, 100, 150]
+    tested_nos_random_initializations = [1, 10]
+    tested_covariance_types = ['spherical', 'diag', 'full']
+    tested_mutations = ['?']
+    tested_recombinations = ['?']
+    tested_popsizes = ['?']
 
     parameters = list(itertools.product(
         tested_methods,
@@ -224,8 +259,6 @@ if __name__ == "__main__":
         tested_recombinations,
         tested_popsizes
     ))
-
-
 
     for dataset_name in tested_datasets:
         print(f"Preprocessing {dataset_name}")

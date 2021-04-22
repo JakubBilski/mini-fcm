@@ -13,12 +13,18 @@ class HMM:
 
         for i in range(no_random_initializations):
             new_model = GaussianHMM(n_components=self.n, covariance_type=covariance_type, n_iter=max_iter, random_state=i)
-            new_model.fit(concatenated_inputs, lengths)
-            score = 0
-            for x in inputs_in_time:
-                score += new_model.score(x)
-            models_with_scores.append((new_model, score))
+            try:
+                new_model.fit(concatenated_inputs, lengths)
+                score = 0
+                for x in inputs_in_time:
+                    score += new_model.score(x)
+            except ValueError:
+                pass
+            else:
+                models_with_scores.append((new_model, score))
 
+        if len(models_with_scores) == 0:
+            return None
         self.model = max(models_with_scores, key=lambda ms: ms[1])[0]
         return self.model.monitor_.iter
 

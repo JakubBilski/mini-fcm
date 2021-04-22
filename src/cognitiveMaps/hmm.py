@@ -6,13 +6,13 @@ class HMM:
     def __init__(self, n):
         self.n = n
 
-    def train(self, inputs_in_time, max_iter, no_random_initializations):
+    def train(self, inputs_in_time, max_iter, no_random_initializations, covariance_type):
         concatenated_inputs = np.concatenate(inputs_in_time)
         lengths = [len(x) for x in inputs_in_time]
         models_with_scores = []
 
         for i in range(no_random_initializations):
-            new_model = GaussianHMM(n_components=self.n, covariance_type="diag", n_iter=max_iter, random_state=i)
+            new_model = GaussianHMM(n_components=self.n, covariance_type=covariance_type, n_iter=max_iter, random_state=i)
             new_model.fit(concatenated_inputs, lengths)
             score = 0
             for x in inputs_in_time:

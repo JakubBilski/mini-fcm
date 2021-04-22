@@ -15,7 +15,7 @@ class DEVeryShrinkedCognitiveMap(BaseCognitiveMap):
         buff = DEVeryShrinkedCognitiveMap.f((x.reshape(n-1, n)).dot(expected_input)) - expected_output
         return np.mean(np.multiply(buff, buff))
 
-    def train(self, inputs_in_time, maxiter=200):
+    def train(self, inputs_in_time, max_iter, mutation, recombination, popsize):
         expected_input = []
         expected_output = []
         for input_in_time in inputs_in_time:
@@ -28,7 +28,12 @@ class DEVeryShrinkedCognitiveMap(BaseCognitiveMap):
             DEVeryShrinkedCognitiveMap._minimized_function,
             bounds,
             (self.n, expected_input, expected_output),
-            maxiter=maxiter,
+            maxiter=max_iter,
+            strategy='rand1bin',
+            popsize=popsize,
+            mutation=mutation,
+            recombination=recombination,
+            init='random',
             seed=1)
         self.weights = result.x.reshape(self.n-1, self.n)
         return result.nit

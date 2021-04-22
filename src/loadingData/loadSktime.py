@@ -12,6 +12,6 @@ def load_sktime(path):
         xses_series[i] = [[xses_series[i][k][j] for k in range(dims)]
                           for j in range(len(xses_series[i][0]))]
     class_labels = np.unique(ys)
-    normalizer = np.vectorize(lambda y: np.where(class_labels == y)[0])
-    normalized_ys = normalizer(ys)
-    return xses_series, normalized_ys
+    unifier = np.vectorize(lambda y: np.where(class_labels == y)[0])
+    unified_ys = unifier(ys)
+    return xses_series, unified_ys

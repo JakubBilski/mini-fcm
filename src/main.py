@@ -29,14 +29,17 @@ def test_solution(
     test_ys,
     train_xses_series,
     train_ys,
-    no_classes,
     dataset_name,
     no_states,
     max_iter,
     fold_no,
     additional_info,
     csv_results_path,
-    no_random_initializations='?'):
+    no_random_initializations,
+    covariance_type,
+    mutation,
+    recombination,
+    popsize):
     
     if solution_name in ['hmm nn', 'hmm 1c']:
         model_class = HMM
@@ -69,6 +72,7 @@ def test_solution(
         cmeans_execution_time = "?"
 
     if solution_name in ['hmm 1c', 'fcm 1c']:
+        no_classes = max(train_ys) + 1
         learning_input = [([], i) for i in range(no_classes)]
         for xs, y in zip(transformed_train_xses_series, train_ys):
             learning_input[y][0].append(xs)
@@ -80,9 +84,9 @@ def test_solution(
     for i in range(len(learning_input)):
         model = model_class(no_states)
         if solution_name in ['hmm nn', 'hmm 1c']:
-            nit = model.train(learning_input[i][0], max_iter, no_random_initializations)
+            nit = model.train(learning_input[i][0], max_iter, no_random_initializations, covariance_type)
         else:
-            nit = model.train(learning_input[i][0], max_iter)
+            nit = model.train(learning_input[i][0], max_iter, mutation, recombination, popsize)
         nits.append(nit)
         model.set_class(learning_input[i][1])
         train_models.append(model)
@@ -95,7 +99,7 @@ def test_solution(
             test_xs=transformed_test_xses_series
         )
     else:
-        predicted = nnPredicting.predict_nn_hmm(
+        predicted = nnPredicting.predict_nn_fcm(
             train_models=train_models,
             test_xs=transformed_test_xses_series
         )
@@ -124,7 +128,11 @@ def test_solution(
         max_nit,
         complete_execution_time,
         cmeans_execution_time,
-        no_random_initializations]
+        no_random_initializations,
+        covariance_type,
+        mutation,
+        recombination,
+        popsize]
     csv_writer.writerow(row)
     print(row)
 
@@ -188,22 +196,36 @@ if __name__ == "__main__":
         'max_no_iterations',
         'complete_execution_time',
         'cmeans_time',
-        'no_random_initializations'])
+        'no_random_initializations',
+        'covariance_type',
+        'mutation',
+        'recombination',
+        'popsize'])
     csv_results_file.close()
 
-    tested_datasets = [name for name, _ in univariateDatasets.DATASETS_NAMES_WITH_NUMBER_OF_CLASSES]
+    tested_datasets = univariateDatasets.DATASETS_NAME_TO_NUMBER_OF_CLASSES.keys()
     # tested_methods = ['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn', 'pso nn']
-    tested_methods = ['hmm nn']
-    tested_nos_states = [3]
-    tested_max_iters = [1, 10, 100]
-    tested_nos_random_initializations = [1, 10, 100]
+    tested_methods = ['fcm nn']
+    tested_nos_states = [3, 4, 5, 6, 7]
+    tested_max_iters = [150, 200, 250]
+    tested_nos_random_initializations = ['?']
+    tested_covariance_types = ['?']
+    tested_mutations = [0.5, 0.8]
+    tested_recombinations = [0.5, 0.9]
+    tested_popsizes = [10, 15]
 
-    parameters = itertools.product(
+    parameters = list(itertools.product(
         tested_methods,
         tested_nos_states,
         tested_max_iters,
-        tested_nos_random_initializations
-    )
+        tested_nos_random_initializations,
+        tested_covariance_types,
+        tested_mutations,
+        tested_recombinations,
+        tested_popsizes
+    ))
+
+
 
     for dataset_name in tested_datasets:
         print(f"Preprocessing {dataset_name}")
@@ -214,7 +236,7 @@ if __name__ == "__main__":
 
         folds = cross_validation_folds(train_xses_series, train_ys, 3)
 
-        for method_name, no_states, max_iter, no_rand_init in parameters:
+        for method_name, no_states, max_iter, no_rand_init, cov_type, mut, recomb, popsize in parameters:
             for f in range(len(folds)):
                 fold_train_xses_series = folds[f][0]
                 fold_train_ys = folds[f][1]
@@ -226,11 +248,14 @@ if __name__ == "__main__":
                     fold_validation_ys,
                     fold_train_xses_series,
                     fold_train_ys,
-                    no_states,
                     dataset_name,
                     no_states,
                     max_iter,
                     f,
                     "",
                     csv_results_path,
-                    no_random_initializations=no_rand_init)
+                    no_random_initializations=no_rand_init,
+                    covariance_type=cov_type,
+                    mutation=mut,
+                    recombination=recomb,
+                    popsize=popsize)

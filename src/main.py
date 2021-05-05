@@ -196,7 +196,7 @@ def cross_validation_folds(xses_series, ys, k):
         train_ys = [ys[i] for i in complement]
         test_ys = [ys[i] for i in f_indexes[m]]
         result.append((train_xses_series, train_ys, test_xses_series, test_ys))
-    
+
     return result
 
 
@@ -227,27 +227,29 @@ if __name__ == "__main__":
         'popsize'])
     csv_results_file.close()
 
-    tested_datasets = univariateDatasets.DATASETS_NAME_TO_NUMBER_OF_CLASSES.keys()
+    tested_datasets = list(univariateDatasets.DATASET_NAME_TO_INFO.keys())
+    thread_no = 5
+    tested_datasets = tested_datasets[thread_no::16]
 
     # tested_methods = ['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn', 'pso nn']
 
-    # tested_methods = ['fcm nn']
-    # tested_nos_states = [3, 4, 5, 6, 7]
-    # tested_max_iters = [150, 200, 250]
-    # tested_nos_random_initializations = ['?']
-    # tested_covariance_types = ['?']
-    # tested_mutations = [0.5, 0.8]
-    # tested_recombinations = [0.5, 0.9]
-    # tested_popsizes = [10, 15]
-
-    tested_methods = ['hmm nn']
+    tested_methods = ['fcm nn']
     tested_nos_states = [3, 4, 5, 6, 7]
-    tested_max_iters = [50, 100, 150]
-    tested_nos_random_initializations = [1, 10]
-    tested_covariance_types = ['spherical', 'diag', 'full']
-    tested_mutations = ['?']
-    tested_recombinations = ['?']
-    tested_popsizes = ['?']
+    tested_max_iters = [150, 200, 250]
+    tested_nos_random_initializations = ['?']
+    tested_covariance_types = ['?']
+    tested_mutations = [0.5, 0.8]
+    tested_recombinations = [0.5, 0.9]
+    tested_popsizes = [10, 15]
+
+    # tested_methods = ['hmm nn']
+    # tested_nos_states = [3, 4, 5, 6, 7]
+    # tested_max_iters = [50, 100, 150]
+    # tested_nos_random_initializations = [1, 10]
+    # tested_covariance_types = ['spherical', 'diag', 'full']
+    # tested_mutations = ['?']
+    # tested_recombinations = ['?']
+    # tested_popsizes = ['?']
 
     parameters = list(itertools.product(
         tested_methods,

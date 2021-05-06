@@ -19,7 +19,7 @@ from modelAnalysis import mapsExamining
 from loadingData import loadSktime
 from loadingData import univariateDatasets
 
-plots_dir = pathlib.PurePosixPath(f'plots\\{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}\\')
+plots_dir = pathlib.Path('plots', f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
 
 
 def test_solution(
@@ -262,8 +262,8 @@ if __name__ == "__main__":
     for dataset_name in tested_datasets:
         print(f"Preprocessing {dataset_name}")
         train_xses_series, train_ys, test_xses_series, test_ys = load_preprocessed_data(
-            test_path=pathlib.PurePosixPath(f'./data/Univariate_ts/{dataset_name}/{dataset_name}_TEST.ts'),
-            train_path=pathlib.PurePosixPath(f'./data/Univariate_ts/{dataset_name}/{dataset_name}_TRAIN.ts'),
+            test_path=pathlib.Path('data', 'Univariate_ts', f'{dataset_name}', f'{dataset_name}_TEST.ts'),
+            train_path=pathlib.Path('data', 'Univariate_ts', f'{dataset_name}', f'{dataset_name}_TRAIN.ts'),
             derivative_order=1)
 
         folds = cross_validation_folds(train_xses_series, train_ys, 3)

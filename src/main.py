@@ -6,7 +6,6 @@ import time
 import itertools
 from datetime import datetime
 
-from cognitiveMaps.psoCognitiveMap import PSOCognitiveMap
 from cognitiveMaps.deCognitiveMap import DECognitiveMap
 from cognitiveMaps.deShrinkedCognitiveMap import DEShrinkedCognitiveMap
 from cognitiveMaps.deVeryShrinkedCognitiveMap import DEVeryShrinkedCognitiveMap
@@ -49,8 +48,6 @@ def test_solution(
         model_class = DEShrinkedCognitiveMap
     elif solution_name == 'vsfcm nn':
         model_class = DEVeryShrinkedCognitiveMap
-    elif solution_name == 'pso nn':
-        model_class = PSOCognitiveMap
     else:
         raise Exception(f"Solution name {solution_name} not recognized")
 
@@ -58,7 +55,7 @@ def test_solution(
     csv_writer = csv.writer(csv_results_file)
 
     execution_start_timestamp = time.time()
-    if solution_name in ['fcm nn', 'fcm 1c', 'sfcm nn', 'vsfcm nn', 'pso nn']:
+    if solution_name in ['fcm nn', 'fcm 1c', 'sfcm nn', 'vsfcm nn']:
         centers, transformed_train_xses_series = cmeans.find_centers_and_transform(
             xses_series=train_xses_series,
             c=no_states)
@@ -133,7 +130,7 @@ def test_solution(
 
     complete_execution_time = time.time() - execution_start_timestamp
     
-    if solution_name in ['fcm nn', 'fcm 1c', 'sfcm nn', 'vsfcm nn', 'pso nn']:
+    if solution_name in ['fcm nn', 'fcm 1c', 'sfcm nn', 'vsfcm nn']:
         degenerated_share = mapsExamining.get_share_of_degenerated_weights(train_models, threshold=0.99)
     else:
         degenerated_share = "?"
@@ -231,7 +228,7 @@ if __name__ == "__main__":
     thread_no = 5
     tested_datasets = tested_datasets[thread_no::16]
 
-    # tested_methods = ['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn', 'pso nn']
+    # tested_methods = ['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn']
 
     tested_methods = ['fcm nn']
     tested_nos_states = [3, 4, 5, 6, 7]

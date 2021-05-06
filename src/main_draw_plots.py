@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-from pathlib import Path
+from pathlib import PurePosixPath
 import matplotlib.patches as mpatches
 import matplotlib.ticker as ticker
 from datetime import datetime
@@ -21,10 +21,10 @@ def whiskers_plot(ax, x, dx, ys, color):
 
 
 if __name__ == "__main__":
-    plots_dir = Path(f'plots/{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}/')
+    plots_dir = PurePosixPath(f'plots/{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}/')
     os.mkdir(plots_dir)
 
-    csv_path = Path('plots/picked/pso_degeneration/classification_results.csv')
+    csv_path = PurePosixPath('plots/picked/pso_degeneration/classification_results.csv')
     df = pd.read_csv(csv_path)
     print(df.head())
     colors = {

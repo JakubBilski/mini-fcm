@@ -3,6 +3,7 @@ import pathlib
 import os
 import csv
 import time
+import argparse
 import itertools
 from datetime import datetime
 
@@ -197,7 +198,15 @@ def cross_validation_folds(xses_series, ys, k):
     return result
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='Running ')
+    parser.add_argument('--process_id', '-p', required=True, choices=range(0,16), type=int)
+    args = parser.parse_args()
+    return args
+
+
 if __name__ == "__main__":
+    process_id = parse_args().process_id
 
     os.mkdir(plots_dir)
     csv_results_path=plots_dir / f'classification_results.csv'
@@ -225,8 +234,7 @@ if __name__ == "__main__":
     csv_results_file.close()
 
     tested_datasets = list(univariateDatasets.DATASET_NAME_TO_INFO.keys())
-    thread_no = 5
-    tested_datasets = tested_datasets[thread_no::16]
+    tested_datasets = tested_datasets[process_id::16]
 
     # tested_methods = ['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn']
 

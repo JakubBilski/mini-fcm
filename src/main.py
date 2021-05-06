@@ -20,8 +20,6 @@ from modelAnalysis import mapsExamining
 from loadingData import loadSktime
 from loadingData import univariateDatasets
 
-plots_dir = pathlib.Path('plots', f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
-
 
 def test_solution(
     solution_name,
@@ -201,12 +199,15 @@ def cross_validation_folds(xses_series, ys, k):
 def parse_args():
     parser = argparse.ArgumentParser(description='Running ')
     parser.add_argument('--process_id', '-p', required=True, choices=range(0,16), type=int)
+    parser.add_argument('--name', '-n', required=False, type=str, default=f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
     args = parser.parse_args()
     return args
 
 
 if __name__ == "__main__":
-    process_id = parse_args().process_id
+    args = parse_args()
+    process_id = args.process_id
+    plots_dir = pathlib.Path('plots', args.name)
 
     os.mkdir(plots_dir)
     csv_results_path=plots_dir / f'classification_results.csv'

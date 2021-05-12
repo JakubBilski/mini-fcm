@@ -209,30 +209,37 @@ if __name__ == "__main__":
     process_id = args.process_id
     plots_dir = pathlib.Path('plots', args.name)
 
-    os.mkdir(plots_dir)
+    if not os.path.exists(plots_dir):
+        os.mkdir(plots_dir)
     csv_results_path=plots_dir / f'classification_results.csv'
-    csv_results_file = open(csv_results_path, 'w', newline='')
-    csv_writer = csv.writer(csv_results_file)
-    csv_writer.writerow([
-        'dataset',
-        'method',
-        'fold_no',
-        'additional_info',
-        'no_states',
-        'maxiter',
-        'accuracy',
-        'mcc',
-        'degenerated_share',
-        'mean_no_iterations',
-        'max_no_iterations',
-        'complete_execution_time',
-        'cmeans_time',
-        'no_random_initializations',
-        'covariance_type',
-        'mutation',
-        'recombination',
-        'popsize'])
-    csv_results_file.close()
+    if not os.path.exists(csv_results_path):
+        csv_results_file = open(csv_results_path, 'w', newline='')
+        csv_writer = csv.writer(csv_results_file)
+        csv_writer.writerow([
+            'dataset',
+            'method',
+            'fold_no',
+            'additional_info',
+            'no_states',
+            'maxiter',
+            'accuracy',
+            'mcc',
+            'degenerated_share',
+            'mean_no_iterations',
+            'max_no_iterations',
+            'complete_execution_time',
+            'cmeans_time',
+            'no_random_initializations',
+            'covariance_type',
+            'mutation',
+            'recombination',
+            'popsize'])
+        csv_results_file.close()
+        already_tested_rows = []
+    else:
+        csv_results_file = open(csv_results_path, 'r', newline='')
+        csv_reader = csv.reader(csv_results_file)
+        already_tested_rows = [row for row in csv_reader]
 
     tested_datasets = list(univariateDatasets.DATASET_NAME_TO_INFO.keys())
     tested_datasets = tested_datasets[process_id::16]
@@ -279,6 +286,23 @@ if __name__ == "__main__":
 
         for method_name, no_states, max_iter, no_rand_init, cov_type, mut, recomb, popsize in parameters:
             for f in range(len(folds)):
+                was_already_tested = False
+                for at_row in already_tested_rows:
+                    if at_row[0] == str(dataset_name) and \
+                        at_row[1] == str(method_name) and \
+                        at_row[2] == str(f) and \
+                        at_row[4] == str(no_states) and \
+                        at_row[5] == str(max_iter) and \
+                        at_row[13] == str(no_rand_init) and \
+                        at_row[14] == str(cov_type) and \
+                        at_row[15] == str(mut) and \
+                        at_row[16] == str(recomb) and \
+                        at_row[17] == str(popsize):
+                        print(f"Skipping {dataset_name} {method_name, no_states, max_iter, no_rand_init, cov_type, mut, recomb, popsize} {f}")
+                        was_already_tested = True
+                        break
+                if was_already_tested:
+                    continue
                 fold_train_xses_series = folds[f][0]
                 fold_train_ys = folds[f][1]
                 fold_validation_xses_series = folds[f][2]

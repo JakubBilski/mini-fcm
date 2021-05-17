@@ -4,13 +4,16 @@ import os
 
 from loadingData import univariateDatasets
 
+
 class bcolors:
     OKGREEN = '\033[92m'
     RED = '\033[41m'
     YELLOW = '\033[103m'
     END = '\x1b[0m'
 
-from savingResults import csvSettings
+
+NO_COLUMNS = 3
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Merge csvs into one. Remove duplicate expreriments.')
@@ -22,7 +25,10 @@ def parse_args():
 def display_problem_progress(rows, max_rows_for_dataset):    
     datasets = list(univariateDatasets.DATASET_NAME_TO_INFO.keys())
     longest_ds = max([len(x) for x in datasets])
-    for dataset in datasets:
+    column_length = (len(datasets) - 1) // NO_COLUMNS + 1
+    rows_to_print = [[] for _ in range(column_length)]
+    for i in range(len(datasets)):
+        dataset = datasets[i]
         count = 0
         for row in rows:
             if row[0] == dataset:
@@ -35,7 +41,15 @@ def display_problem_progress(rows, max_rows_for_dataset):
             bar_fill = "|\033[41m  \x1b[0m    |"
         else:
             bar_fill = "|      |"
-        print(f"{dataset.ljust(longest_ds)} {bar_fill} {count}/{max_rows_for_dataset}")
+        rows_to_print[i % column_length].append(
+            f"{dataset.ljust(longest_ds)} {bar_fill} {str(count).rjust(3)}/{max_rows_for_dataset}"
+        )
+    rows_to_print = ['  '.join(row) for row in rows_to_print]
+    print("".join(["_" for _ in range(len(rows_to_print[0]))]))
+    for row in rows_to_print:
+        print(row)
+    print()
+
 
 if __name__ == '__main__':
     args = parse_args()
@@ -43,13 +57,55 @@ if __name__ == '__main__':
     csv_rows = list(csv.reader(csv_results_file))[1:]
 
     print("FMC: number of classes 3-7")
-    print("_______________________________")
+    print("maxiter [150, 200, 250]")
+    print("mutation [0.5, 0.8]")
+    print("recombination [0.5, 0.9]")
+    print("popsize [10, 15]")
     rows = [row for row in csv_rows if row[1] == 'fcm nn' and int(row[4]) in [3, 4, 5, 6, 7]]
-    display_problem_progress(rows, 360)
-    print("_______________________________")
+    if len(rows) == 0:
+        print("____________________\nNo experiments found\n")
+    else:
+        display_problem_progress(rows, 360)
 
     print("FMC: number of classes 8-9, 12, 16")
-    print("_______________________________")
+    print("maxiter [150, 200, 250]")
+    print("mutation [0.5, 0.8]")
+    print("recombination [0.5, 0.9]")
+    print("popsize [10, 15]")
     rows = [row for row in csv_rows if row[1] == 'fcm nn' and int(row[4]) in [8, 9, 12, 16]]
-    display_problem_progress(rows, 288)
-    print("_______________________________")
+    if len(rows) == 0:
+        print("____________________\nNo experiments found\n")
+    else:
+        display_problem_progress(rows, 288)
+
+    print("FMC one per class: number of classes 3-7")
+    print("maxiter ?")
+    print("mutation ?")
+    print("recombination ?")
+    print("popsize ?")
+    rows = [row for row in csv_rows if row[1] == 'fcm 1c' and int(row[4]) in [3, 4, 5, 6, 7]]
+    if len(rows) == 0:
+        print("____________________\nNo experiments found\n")
+    else:
+        display_problem_progress(rows, 288)
+
+    print("HMM: number of states 3-9, 12, 16")
+    print("maxiter [50, 100, 150]")
+    print("num random inits [1, 10]")
+    print("covariance type ['spherical', 'diag', 'full']")
+    rows = [row for row in csv_rows if row[1] == 'hmm nn' and int(row[4]) in [3, 4, 5, 6, 7, 8, 9, 12, 16]]
+    if len(rows) == 0:
+        print("____________________\nNo experiments found\n")
+    else:
+        display_problem_progress(rows, 162)
+
+
+    print("HMM one class: number of states 3-7")
+    print("maxiter ?")
+    print("num random inits ?")
+    print("covariance type ?")
+    rows = [row for row in csv_rows if row[1] == 'hmm 1c' and int(row[4]) in [3, 4, 5, 6, 7]]
+    if len(rows) == 0:
+        print("____________________\nNo experiments found\n")
+    else:
+        display_problem_progress(rows, 162)

@@ -19,6 +19,7 @@ from modelAnalysis import nnPredicting
 from modelAnalysis import mapsExamining
 from loadingData import loadSktime
 from loadingData import univariateDatasets
+from savingResults import csvSettings
 
 
 def test_solution(
@@ -199,7 +200,14 @@ def cross_validation_folds(xses_series, ys, k):
 def parse_args():
     parser = argparse.ArgumentParser(description='Running ')
     parser.add_argument('--process_id', '-p', required=True, choices=range(0,16), type=int)
-    parser.add_argument('--name', '-n', required=False, type=str, default=f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
+    parser.add_argument(
+        '--method',
+        '-m',
+        required=True,
+        choices=['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn'],
+        type=str)
+    parser.add_argument('--resultsdir', '-rd', required=False, type=str, default=f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
+    parser.add_argument('--skipfile', '-s', required=False, type=str, default=f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
     args = parser.parse_args()
     return args
 
@@ -207,62 +215,45 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     process_id = args.process_id
-    plots_dir = pathlib.Path('plots', args.name)
+    if args.skipfile is not None:
+        skip_file = pathlib.Path(args.skip_file)
+        skip_file = open(skip_file, 'r', newline='')
+        csv_reader = csv.reader(skip_file)
+        already_tested_rows = [row for row in csv_reader]
+    else:
+        already_tested_rows = []
 
+    plots_dir = pathlib.Path('plots', args.resultsdir)
     if not os.path.exists(plots_dir):
         os.mkdir(plots_dir)
     csv_results_path=plots_dir / f'classification_results.csv'
-    if not os.path.exists(csv_results_path):
-        csv_results_file = open(csv_results_path, 'w', newline='')
-        csv_writer = csv.writer(csv_results_file)
-        csv_writer.writerow([
-            'dataset',
-            'method',
-            'fold_no',
-            'additional_info',
-            'no_states',
-            'maxiter',
-            'accuracy',
-            'mcc',
-            'degenerated_share',
-            'mean_no_iterations',
-            'max_no_iterations',
-            'complete_execution_time',
-            'cmeans_time',
-            'no_random_initializations',
-            'covariance_type',
-            'mutation',
-            'recombination',
-            'popsize'])
-        csv_results_file.close()
-        already_tested_rows = []
-    else:
-        csv_results_file = open(csv_results_path, 'r', newline='')
-        csv_reader = csv.reader(csv_results_file)
-        already_tested_rows = [row for row in csv_reader]
+    csv_results_file = open(csv_results_path, 'w', newline='')
+    csv_writer = csv.writer(csv_results_file)
+    csv_writer.writerow(csvSettings.get_header())
+    csv_results_file.close()
 
-    tested_datasets = list(univariateDatasets.DATASET_NAME_TO_INFO.keys())
-    tested_datasets = tested_datasets[process_id::16]
+    datasets = list(univariateDatasets.DATASET_NAME_TO_INFO.keys())
+    datasets = datasets[process_id::16]
 
+    tested_methods = [args.method]
     # tested_methods = ['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn']
 
-    tested_methods = ['fcm nn']
-    tested_nos_states = [3, 4, 5, 6, 7]
-    tested_max_iters = [150, 200, 250]
-    tested_nos_random_initializations = ['?']
-    tested_covariance_types = ['?']
-    tested_mutations = [0.5, 0.8]
-    tested_recombinations = [0.5, 0.9]
-    tested_popsizes = [10, 15]
-
-    # tested_methods = ['hmm nn']
-    # tested_nos_states = [3, 4, 5, 6, 7]
-    # tested_max_iters = [50, 100, 150]
-    # tested_nos_random_initializations = [1, 10]
-    # tested_covariance_types = ['spherical', 'diag', 'full']
-    # tested_mutations = ['?']
-    # tested_recombinations = ['?']
-    # tested_popsizes = ['?']
+    if args.method == 'fcm nn':
+        tested_nos_states = [3, 4, 5, 6, 7]
+        tested_max_iters = [150, 200, 250]
+        tested_nos_random_initializations = ['?']
+        tested_covariance_types = ['?']
+        tested_mutations = [0.5, 0.8]
+        tested_recombinations = [0.5, 0.9]
+        tested_popsizes = [10, 15]
+    elif args.method == 'hmm nn':
+        tested_nos_states = [3, 4, 5, 6, 7]
+        tested_max_iters = [50, 100, 150]
+        tested_nos_random_initializations = [1, 10]
+        tested_covariance_types = ['spherical', 'diag', 'full']
+        tested_mutations = ['?']
+        tested_recombinations = ['?']
+        tested_popsizes = ['?']
 
     parameters = list(itertools.product(
         tested_methods,
@@ -275,7 +266,7 @@ if __name__ == "__main__":
         tested_popsizes
     ))
 
-    for dataset_name in tested_datasets:
+    for dataset_name in datasets:
         print(f"Preprocessing {dataset_name}")
         train_xses_series, train_ys, test_xses_series, test_ys = load_preprocessed_data(
             test_path=pathlib.Path('data', 'Univariate_ts', f'{dataset_name}', f'{dataset_name}_TEST.ts'),

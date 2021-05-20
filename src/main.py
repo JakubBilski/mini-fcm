@@ -208,7 +208,7 @@ def parse_args():
         required=True,
         type=str)
     parser.add_argument('--resultsdir', '-rd', required=False, type=str, default=f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
-    parser.add_argument('--skipfile', '-sf', required=False, type=str, default=f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
+    parser.add_argument('--skipfile', '-sf', required=False, type=str)
     args = parser.parse_args()
     ' '.join(args.method)
     return args

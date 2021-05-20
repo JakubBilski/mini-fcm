@@ -204,7 +204,7 @@ def parse_args():
     parser.add_argument(
         '--method',
         '-m',
-        nargs='2',
+        nargs=2,
         required=True,
         type=str)
     parser.add_argument('--resultsdir', '-rd', required=False, type=str, default=f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')

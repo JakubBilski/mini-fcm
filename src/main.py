@@ -200,17 +200,17 @@ def cross_validation_folds(xses_series, ys, k):
 def parse_args():
     parser = argparse.ArgumentParser(description='Running ')
     parser.add_argument('--dataset_id', '-d', required=False, choices=range(0,85), type=int)
-    parser.add_argument('--states', '-s', nargs='+', required=False, type=str, default='3 4 5 6 7')
+    parser.add_argument('--states', '-s', nargs='+', required=False, type=int, default=[3, 4, 5, 6, 7])
     parser.add_argument(
         '--method',
         '-m',
         nargs='+',
         required=True,
-        choices=['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn'],
         type=str)
     parser.add_argument('--resultsdir', '-rd', required=False, type=str, default=f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
     parser.add_argument('--skipfile', '-sf', required=False, type=str, default=f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
     args = parser.parse_args()
+    ' '.join(args.method)
     return args
 
 
@@ -241,7 +241,7 @@ if __name__ == "__main__":
     tested_methods = [args.method]
     # tested_methods = ['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn']
 
-    tested_nos_states = [int(x) for x in args.states.split(sep=" ")]
+    tested_nos_states = [int(x) for x in args.states]
 
     if args.method == 'fcm nn':
         tested_max_iters = [150, 200, 250]

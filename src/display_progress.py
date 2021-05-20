@@ -89,15 +89,25 @@ if __name__ == '__main__':
     else:
         display_problem_progress(rows, 288)
 
-    print("HMM: number of states 3-9, 12, 16")
+    print("HMM: number of states 3-7")
     print("maxiter [50, 100, 150]")
     print("num random inits [1, 10]")
     print("covariance type ['spherical', 'diag', 'full']")
-    rows = [row for row in csv_rows if row[1] == 'hmm nn' and int(row[4]) in [3, 4, 5, 6, 7, 8, 9, 12, 16]]
+    rows = [row for row in csv_rows if row[1] == 'hmm nn' and int(row[4]) in [3, 4, 5, 6, 7]]
     if len(rows) == 0:
         print("____________________\nNo experiments found\n")
     else:
-        display_problem_progress(rows, 162)
+        display_problem_progress(rows, 270)
+
+    print("HMM: number of states 8-9, 12, 16")
+    print("maxiter [50, 100, 150]")
+    print("num random inits [1, 10]")
+    print("covariance type ['spherical', 'diag', 'full']")
+    rows = [row for row in csv_rows if row[1] == 'hmm nn' and int(row[4]) in [8, 9, 12, 16]]
+    if len(rows) == 0:
+        print("____________________\nNo experiments found\n")
+    else:
+        display_problem_progress(rows, 216)
 
 
     print("HMM one class: number of states 3-7")

@@ -199,22 +199,23 @@ def cross_validation_folds(xses_series, ys, k):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Running ')
-    parser.add_argument('--process_id', '-p', required=True, choices=range(0,16), type=int)
+    parser.add_argument('--dataset_id', '-d', required=False, choices=range(0,85), type=int)
+    parser.add_argument('--states', '-s', nargs='+', required=False, type=str, default='3 4 5 6 7')
     parser.add_argument(
         '--method',
         '-m',
+        nargs='+',
         required=True,
         choices=['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn'],
         type=str)
     parser.add_argument('--resultsdir', '-rd', required=False, type=str, default=f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
-    parser.add_argument('--skipfile', '-s', required=False, type=str, default=f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
+    parser.add_argument('--skipfile', '-sf', required=False, type=str, default=f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
     args = parser.parse_args()
     return args
 
 
 if __name__ == "__main__":
     args = parse_args()
-    process_id = args.process_id
     if args.skipfile is not None:
         skip_file = pathlib.Path(args.skip_file)
         skip_file = open(skip_file, 'r', newline='')
@@ -233,13 +234,16 @@ if __name__ == "__main__":
     csv_results_file.close()
 
     datasets = list(univariateDatasets.DATASET_NAME_TO_INFO.keys())
-    datasets = datasets[process_id::16]
+
+    if args.dataset_id is not None:
+        datasets = [datasets[args.dataset_id]]
 
     tested_methods = [args.method]
     # tested_methods = ['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn']
 
+    tested_nos_states = [int(x) for x in args.states.split(sep=" ")]
+
     if args.method == 'fcm nn':
-        tested_nos_states = [3, 4, 5, 6, 7]
         tested_max_iters = [150, 200, 250]
         tested_nos_random_initializations = ['?']
         tested_covariance_types = ['?']
@@ -247,7 +251,6 @@ if __name__ == "__main__":
         tested_recombinations = [0.5, 0.9]
         tested_popsizes = [10, 15]
     elif args.method == 'hmm nn':
-        tested_nos_states = [3, 4, 5, 6, 7]
         tested_max_iters = [50, 100, 150]
         tested_nos_random_initializations = [1, 10]
         tested_covariance_types = ['spherical', 'diag', 'full']

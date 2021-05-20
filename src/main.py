@@ -199,23 +199,23 @@ def cross_validation_folds(xses_series, ys, k):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Running ')
-    parser.add_argument('--dataset_id', '-d', required=False, choices=range(0,85), type=int)
+    parser.add_argument('--dataset_id', '-d', required=True, choices=range(0,85), type=int)
     parser.add_argument('--states', '-s', nargs='+', required=False, type=int, default=[3, 4, 5, 6, 7])
     parser.add_argument(
         '--method',
         '-m',
-        nargs='+',
-        required=False,
+        nargs='2',
+        required=True,
         type=str)
     parser.add_argument('--resultsdir', '-rd', required=False, type=str, default=f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
     parser.add_argument('--skipfile', '-sf', required=False, type=str)
     args = parser.parse_args()
+    args.method = f"{args.method[0]} {args.method[1]}"
     print(args.dataset_id)
     print(args.states)
     print(args.method)
     print(args.resultsdir)
     print(args.skipfile)
-    ' '.join(args.method)
     return args
 
 

@@ -217,7 +217,7 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     if args.skipfile is not None:
-        skip_file = pathlib.Path(args.skip_file)
+        skip_file = pathlib.Path(args.skipfile)
         skip_file = open(skip_file, 'r', newline='')
         csv_reader = csv.reader(skip_file)
         already_tested_rows = [row for row in csv_reader]

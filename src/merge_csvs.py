@@ -1,6 +1,7 @@
 import argparse
 import csv
 import os
+from tqdm import tqdm
 
 from savingResults import csvSettings
 
@@ -22,13 +23,14 @@ if __name__ == '__main__':
             gathered_rows.extend([row for row in csv_rows])
     unique_gathered_rows = []
     meaningful_columns = csvSettings.get_meaningful_columns()
-    for row in gathered_rows:
+    for row in tqdm(gathered_rows):
         duplicate = False
         for urow in unique_gathered_rows:
             duplicate = True
             for i in meaningful_columns:
                 if row[i] != urow[i]:
                     duplicate = False
+                    break
             if duplicate:
                 break
         if not duplicate:

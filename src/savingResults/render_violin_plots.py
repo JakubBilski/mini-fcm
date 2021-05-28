@@ -3,8 +3,6 @@ import pandas as pd
 import argparse
 import numpy as np
 from pathlib import Path
-import matplotlib.patches as mpatches
-import matplotlib.ticker as ticker
 from datetime import datetime
 from loadingData import univariateDatasets
 import os
@@ -55,32 +53,53 @@ if __name__ == "__main__":
 
             for k in range(len(x_keys)):
                 x_key = x_keys[k]
-                axs[k].scatter(dataset_df[x_key], accuracies)
                 distinct_xs_means = []
-                distinct_xs = sorted(list(set(dataset_df[x_key])))
-                axs[k].set_xticks(distinct_xs)
+                distinct_xs = list(set(dataset_df[x_key]))
+
+                # if labels are ints, sort them as ints
+                try:
+                    distinct_xs = [int(dx) for dx in distinct_xs]
+                    distinct_xs.sort()
+                    distinct_xs = [str(dx) for dx in distinct_xs]
+                except ValueError:
+                    pass
+
+                to_violin = []
                 for dx in distinct_xs:
                     dx_accuracies = dataset_df[dataset_df[x_key] == dx]['accuracy']
-                    mean_dx_accuracy = np.mean([float(a) if a!="?" else 0.0 for a in dx_accuracies])
+                    dx_accuracies = np.asarray([float(a) if a!="?" else 0.0 for a in dx_accuracies])
+                    to_violin.append(np.asarray(dx_accuracies))
+                    mean_dx_accuracy = np.mean(dx_accuracies)
                     distinct_xs_means.append(f"{mean_dx_accuracy:.2f}")
-
+                ticks = range(len(distinct_xs))
+                violin_parts = axs[k].violinplot(to_violin, ticks, showextrema=False, showmeans=True)
+                for pc in violin_parts['bodies']:
+                    pc.set_facecolor('hotpink')
+                    pc.set_alpha(1.0)
+                violin_parts['cmeans'].set_linewidth(3.0)
+                violin_parts['cmeans'].set_edgecolor("black")
+                axs[k].set_xticks(ticks)
+                axs[k].set_xticklabels(distinct_xs)
                 axs[k].set_xlabel(x_key)
                 axs[k].margins(x=1/len(distinct_xs))
-                twinaxis = axs[k].twiny()
-                twinaxis.set_xticks(axs[k].get_xticks())
-                # make ticks invisible, but keep labels
-                twinaxis.tick_params(length=0, colors='blue')
-                twinaxis.set_xticklabels(distinct_xs_means)
-                twinaxis.set_xbound(axs[k].get_xbound())
+                axs[k].patch.set_alpha(0.0)
                 if k==0:
                     axs[k].set_ylabel('accuracy')
+                    axs[k].tick_params(labelleft=True, labelright=False,
+                     left=True, right=True)
+                elif k==len(x_keys)-1:
+                    axs[k].tick_params(labelleft=False, labelright=True,
+                     left=True, right=True)
                 else:
-                    axs[k].set_yticklabels([])
+                    axs[k].tick_params(labelleft=False, labelright=False,
+                     left=True, right=True)
 
             dataset_info = univariateDatasets.DATASET_NAME_TO_INFO[dataset]
             no_classes = dataset_info[3]
             train_size = dataset_info[0]
             series_length = dataset_info[2]
+            # plt.tight_layout()
+            plt.subplots_adjust(wspace=0.0)
             plt.suptitle(f'{method} {dataset} ({no_classes} classes, train size {train_size}, series len {series_length})')
             # plt.show()
             plt.savefig(plots_dir / f'{method}_{dataset}.png')

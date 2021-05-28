@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+import argparse
 import numpy as np
 from pathlib import Path
 import matplotlib.patches as mpatches
@@ -9,12 +10,21 @@ from loadingData import univariateDatasets
 import os
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='Create plot 1')
+    parser.add_argument('--filepath', '-f', required=True, type=str)
+    parser.add_argument('--plotdir', '-d', required=False, type=str, default=f'plots/{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}/')
+    args = parser.parse_args()
+    return args
+
+
 if __name__ == "__main__":
-    plots_dir = Path(f'plots/{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}/')
+    args = parse_args()
+    plots_dir = Path(args.plotdir)
     os.mkdir(plots_dir)
 
-    csv_path = Path('D:\\Projekty\\fcm\\mini-fcm\\plots\\picked\\final_data\\raw\\classification_results_2.csv')
-    df = pd.read_csv(csv_path)
+    csv_path = args.filepath
+    df = pd.read_csv(csv_path, dtype="str")
     print(df.head())
 
     method = 'hmm nn'
@@ -25,6 +35,10 @@ if __name__ == "__main__":
 
     for dataset in datasets:
         dataset_df = df[df['dataset'] == dataset]
+
+        if dataset_df.shape[0] != 270:
+            print(f"Skipping {dataset} (only {dataset_df.shape[0]} rows)")
+            continue
 
         cov_types = ['spherical', 'diag', 'full']
         fig, axs = plt.subplots(1, len(cov_types), figsize=(16, 5), dpi=100)

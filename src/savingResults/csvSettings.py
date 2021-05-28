@@ -22,5 +22,5 @@ HEADER = [
 def get_header():
     return HEADER
 
-def get_meaningful_columns():
+def get_indexes_characterizing_experiments():
     return [0, 1, 2, 3, 4, 5, 13, 14, 15, 16, 17]

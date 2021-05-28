@@ -25,6 +25,8 @@ if __name__ == "__main__":
     df = pd.read_csv(csv_path, dtype="str")
     print(df.head())
 
+    df = df[df['no_states'] <= '7']
+
     method_to_x_keys = {}
     method_to_x_keys['hmm nn'] = ['no_states', 'maxiter', 'no_random_initializations', 'covariance_type']
     method_to_x_keys['fcm nn'] = ['no_states', 'maxiter', 'mutation', 'recombination', 'popsize']
@@ -33,7 +35,9 @@ if __name__ == "__main__":
     method_to_num_experiments['fcm nn'] = 360
     method_to_num_experiments['hmm nn'] = 270
 
-    df = df[df['no_states'] <= '7']
+    method_to_color = {}
+    method_to_color['hmm nn'] = 'hotpink'
+    method_to_color['fcm nn'] = 'royalblue'
 
     for method, x_keys in method_to_x_keys.items():
         method_df = df[df['method'] == method]
@@ -45,7 +49,7 @@ if __name__ == "__main__":
             dataset_df = method_df[method_df['dataset'] == dataset]
 
             if dataset_df.shape[0] != method_to_num_experiments[method]:
-                print(f"Skipping {dataset} (only {dataset_df.shape[0]} rows)")
+                print(f"Skipping {dataset} (only {dataset_df.shape[0]} rows for {method})")
                 continue
 
             fig, axs = plt.subplots(1, len(x_keys), figsize=(16, 5), dpi=100)
@@ -74,13 +78,14 @@ if __name__ == "__main__":
                 ticks = range(len(distinct_xs))
                 violin_parts = axs[k].violinplot(to_violin, ticks, showextrema=False, showmeans=True)
                 for pc in violin_parts['bodies']:
-                    pc.set_facecolor('hotpink')
+                    pc.set_facecolor(method_to_color[method])
                     pc.set_alpha(1.0)
                 violin_parts['cmeans'].set_linewidth(3.0)
                 violin_parts['cmeans'].set_edgecolor("black")
                 axs[k].set_xticks(ticks)
                 axs[k].set_xticklabels(distinct_xs)
                 axs[k].set_xlabel(x_key)
+                axs[k].set_ylim([-0.05,1.05])
                 axs[k].margins(x=1/len(distinct_xs))
                 axs[k].patch.set_alpha(0.0)
                 if k==0:
@@ -98,7 +103,6 @@ if __name__ == "__main__":
             no_classes = dataset_info[3]
             train_size = dataset_info[0]
             series_length = dataset_info[2]
-            # plt.tight_layout()
             plt.subplots_adjust(wspace=0.0)
             plt.suptitle(f'{method} {dataset} ({no_classes} classes, train size {train_size}, series len {series_length})')
             # plt.show()

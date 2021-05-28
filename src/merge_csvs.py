@@ -22,7 +22,7 @@ if __name__ == '__main__':
             csv_rows = list(csv.reader(csv_results_file))[1:]
             gathered_rows.extend([row for row in csv_rows])
     unique_gathered_rows = []
-    meaningful_columns = csvSettings.get_meaningful_columns()
+    meaningful_columns = csvSettings.get_indexes_characterizing_experiments()
     for row in tqdm(gathered_rows):
         duplicate = False
         for urow in unique_gathered_rows:

@@ -61,8 +61,8 @@ if __name__ == "__main__":
     hmm_chosen_params['no_random_initializations'] = '10'
 
     fcm_chosen_params = {}
-    fcm_chosen_params['maxiter'] = '250'
-    fcm_chosen_params['mutation'] = '0.8'
+    fcm_chosen_params['maxiter'] = '150'
+    fcm_chosen_params['mutation'] = '0.5'
     fcm_chosen_params['recombination'] = '0.5'
     fcm_chosen_params['popsize'] = '10'
 

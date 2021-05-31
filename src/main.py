@@ -262,6 +262,14 @@ if __name__ == "__main__":
         tested_mutations = ['?']
         tested_recombinations = ['?']
         tested_popsizes = ['?']
+    elif args.method == 'vsfcm nn':
+        tested_max_iters = [150]
+        tested_nos_random_initializations = ['?']
+        tested_covariance_types = ['?']
+        tested_mutations = [0.5]
+        tested_recombinations = [0.5]
+        tested_popsizes = [10]
+
 
     parameters = list(itertools.product(
         tested_methods,

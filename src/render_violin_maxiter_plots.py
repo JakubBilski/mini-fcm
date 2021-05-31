@@ -32,8 +32,8 @@ if __name__ == "__main__":
     method_to_x_keys['fcm nn'] = ['no_states', 'maxiter', 'mutation', 'recombination', 'popsize']
 
     method_to_num_experiments = {}
-    method_to_num_experiments['fcm nn'] = 360
-    method_to_num_experiments['hmm nn'] = 270
+    method_to_num_experiments['fcm nn'] = 360//3
+    method_to_num_experiments['hmm nn'] = 270//3
 
     method_to_color = {}
     method_to_color['hmm nn'] = 'hotpink'
@@ -44,6 +44,13 @@ if __name__ == "__main__":
         datasets = list(set(method_df['dataset']))
         datasets = [d for d in datasets if d in list(univariateDatasets.DATASET_NAME_TO_INFO.keys())]
         datasets.sort()
+
+        if method == 'fcm nn':
+            maxiter_thresholds = [150, 200, 250]
+        elif method == 'hmm nn':
+            maxiter_thresholds = [50, 100, 150]
+        
+        method_df = method_df[method_df['maxiter'] == str(maxiter_thresholds[-1])]
 
         for dataset in datasets:
             dataset_df = method_df[method_df['dataset'] == dataset]
@@ -68,10 +75,9 @@ if __name__ == "__main__":
 
                 to_violin = []
                 for dx in distinct_xs:
-                    dx_accuracies = dataset_df[dataset_df[x_key] == dx]['accuracy']
-                    dx_accuracies = np.asarray([float(a) if a!="?" else 0.0 for a in dx_accuracies])
-                    to_violin.append(np.asarray(dx_accuracies))
-                    mean_dx_accuracy = np.mean(dx_accuracies)
+                    dx_iterations = dataset_df[dataset_df[x_key] == dx]['mean_no_iterations']
+                    dx_iterations = np.asarray([float(a) if a!="?" else 0.0 for a in dx_iterations])
+                    to_violin.append(np.asarray(dx_iterations))
                 ticks = range(len(distinct_xs))
                 violin_parts = axs[k].violinplot(to_violin, ticks, showextrema=False, showmeans=True)
                 for pc in violin_parts['bodies']:
@@ -82,11 +88,13 @@ if __name__ == "__main__":
                 axs[k].set_xticks(ticks)
                 axs[k].set_xticklabels(distinct_xs)
                 axs[k].set_xlabel(x_key)
-                axs[k].set_ylim([-0.05,1.05])
+                for thr in maxiter_thresholds:
+                    axs[k].axhline(thr, color='black',linestyle='--', linewidth=1)
+                axs[k].set_ylim([0,maxiter_thresholds[-1]+10])
                 axs[k].margins(x=1/len(distinct_xs))
                 axs[k].patch.set_alpha(0.0)
                 if k==0:
-                    axs[k].set_ylabel('accuracy')
+                    axs[k].set_ylabel('mean number of iterations')
                     axs[k].tick_params(labelleft=True, labelright=False,
                      left=True, right=True)
                 elif k==len(x_keys)-1:
@@ -101,11 +109,12 @@ if __name__ == "__main__":
             train_size = dataset_info[0]
             series_length = dataset_info[2]
             plt.subplots_adjust(wspace=0.0)
-            plt.suptitle(f'{method} {dataset} ({no_classes} classes, train size {train_size}, series len {series_length})')
+            if method == 'fcm nn':
+                iteration_thing = 'Differential Evolution'
+            else:
+                iteration_thing = 'Baum-Welch'
+            plt.suptitle(f'Mean number of iterations performed in {iteration_thing}: {dataset} ({no_classes} classes, train size {train_size}, series len {series_length})')
             # plt.show()
             plt.savefig(plots_dir / f'{method}_{dataset}.png')
             plt.close()
-
-
-
     

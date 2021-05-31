@@ -28,15 +28,12 @@ if __name__ == "__main__":
     df = df[df['no_states'] <= '7']
 
     method_to_x_keys = {}
-    method_to_x_keys['hmm nn'] = ['no_states', 'maxiter', 'no_random_initializations', 'covariance_type']
     method_to_x_keys['fcm nn'] = ['no_states', 'maxiter', 'mutation', 'recombination', 'popsize']
 
     method_to_num_experiments = {}
     method_to_num_experiments['fcm nn'] = 360
-    method_to_num_experiments['hmm nn'] = 270
 
     method_to_color = {}
-    method_to_color['hmm nn'] = 'hotpink'
     method_to_color['fcm nn'] = 'royalblue'
 
     for method, x_keys in method_to_x_keys.items():
@@ -68,10 +65,10 @@ if __name__ == "__main__":
 
                 to_violin = []
                 for dx in distinct_xs:
-                    dx_accuracies = dataset_df[dataset_df[x_key] == dx]['accuracy']
-                    dx_accuracies = np.asarray([float(a) if a!="?" else 0.0 for a in dx_accuracies])
-                    to_violin.append(np.asarray(dx_accuracies))
-                    mean_dx_accuracy = np.mean(dx_accuracies)
+                    dx_degen_shares = dataset_df[dataset_df[x_key] == dx]['degenerated_share']
+                    dx_degen_shares = np.asarray([float(s) for s in dx_degen_shares])
+                    to_violin.append(np.asarray(dx_degen_shares))
+                    mean_dx_share = np.mean(dx_degen_shares)
                 ticks = range(len(distinct_xs))
                 violin_parts = axs[k].violinplot(to_violin, ticks, showextrema=False, showmeans=True)
                 for pc in violin_parts['bodies']:
@@ -82,11 +79,11 @@ if __name__ == "__main__":
                 axs[k].set_xticks(ticks)
                 axs[k].set_xticklabels(distinct_xs)
                 axs[k].set_xlabel(x_key)
-                axs[k].set_ylim([-0.05,1.05])
+                axs[k].set_ylim([-0.02,0.32])
                 axs[k].margins(x=1/len(distinct_xs))
                 axs[k].patch.set_alpha(0.0)
                 if k==0:
-                    axs[k].set_ylabel('accuracy')
+                    axs[k].set_ylabel('degenerated weights\' share')
                     axs[k].tick_params(labelleft=True, labelright=False,
                      left=True, right=True)
                 elif k==len(x_keys)-1:
@@ -101,7 +98,7 @@ if __name__ == "__main__":
             train_size = dataset_info[0]
             series_length = dataset_info[2]
             plt.subplots_adjust(wspace=0.0)
-            plt.suptitle(f'{method} {dataset} ({no_classes} classes, train size {train_size}, series len {series_length})')
+            plt.suptitle(f'degenerated weights\' share: {method} {dataset} ({no_classes} classes, train size {train_size}, series len {series_length})')
             # plt.show()
             plt.savefig(plots_dir / f'{method}_{dataset}.png')
             plt.close()

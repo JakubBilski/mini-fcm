@@ -15,6 +15,7 @@ def parse_args():
     parser.add_argument('--scatter', required=False, action='store_true')
     parser.add_argument('--nofailedcircles', required=False, action='store_true')
     parser.add_argument('--states', required=False, action='store_true')
+    parser.add_argument('--vsfcm', required=False, action='store_true')
     args = parser.parse_args()
     return args
 
@@ -27,17 +28,13 @@ if __name__ == "__main__":
     should_draw_scatter = args.scatter
     should_x_states = args.states
     should_failed_circles = not args.nofailedcircles
+    with_vsfcm = args.vsfcm
 
     csv_path = args.filepath
     df = pd.read_csv(csv_path, dtype="str")
     print(df.head())
 
     df = df[df['no_states'] <= '7']
-
-    method_to_num_experiments = {}
-    method_to_num_experiments['fcm nn'] = 360
-    method_to_num_experiments['hmm nn'] = 270
-    method_to_num_experiments['hmm nn'] = 270
 
     method_to_color = {}
     method_to_color['hmm nn'] = 'hotpink'
@@ -54,7 +51,8 @@ if __name__ == "__main__":
 
     methods_and_covariances = []
     methods_and_covariances.append(("fcm nn", "?"))
-    methods_and_covariances.append(("vsfcm nn", "?"))
+    if with_vsfcm:
+        methods_and_covariances.append(("vsfcm nn", "?"))
     methods_and_covariances.append(("hmm nn", "spherical"))
     methods_and_covariances.append(("hmm nn", "diag"))
     methods_and_covariances.append(("hmm nn", "full"))

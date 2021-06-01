@@ -12,7 +12,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Create plot 1')
     parser.add_argument('--filepath', '-f', required=True, type=str)
     parser.add_argument('--plotdir', '-d', required=False, type=str, default=f'plots/{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}/')
-    parser.add_argument('--num_datasets', '-n', required=False, default=30, type=int)
+    parser.add_argument('--numdatasets', '-n', required=False, default=30, type=int)
     args = parser.parse_args()
     return args
 

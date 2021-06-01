@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     methods_and_covariances = []
     methods_and_covariances.append(("fcm nn", "?"))
-    methods_and_covariances.append(("vsfcm nn", "?"))
+    # methods_and_covariances.append(("vsfcm nn", "?"))
     methods_and_covariances.append(("hmm nn", "spherical"))
     methods_and_covariances.append(("hmm nn", "diag"))
     methods_and_covariances.append(("hmm nn", "full"))
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     datasets.sort()
 
 
-    for method, covariance in methods_and_covariances[0:1]:
+    for method, covariance in methods_and_covariances:
         method_df = df[df['method'] == method]
         method_df = method_df[method_df['covariance_type'] == covariance]
         fig, ax = plt.subplots(1, figsize=(8, 8), dpi=100, subplot_kw={"projection": "3d"})
@@ -158,7 +158,7 @@ if __name__ == "__main__":
             Y.extend(ys)
             Z.extend(zs)
 
-        surf = ax.scatter(X, Y, Z, zdir='z')
+        surf = ax.scatter(X, Y, Z, zdir='z', color=method_to_color[method])
         ax.set_zlim(-1.01, 1.01)
         ax.zaxis.set_major_locator(LinearLocator(10))
         ax.zaxis.set_major_formatter(StrMethodFormatter('{x:.02f}'))
@@ -174,7 +174,10 @@ if __name__ == "__main__":
         ax.set_xlabel('log(train_size * series_length)')
         ax.set_zlabel('mcc')
 
-        plt.suptitle(f'Performance of chosen {method}')
+        if method == 'hmm nn':
+            plt.suptitle(f'Performance of chosen {method} {covariance}')
+        else:
+            plt.suptitle(f'Performance of chosen {method}')
         plt.show()
         # plt.savefig(plots_dir / f'{dataset}.png')
         plt.close()

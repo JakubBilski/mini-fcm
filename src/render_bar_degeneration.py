@@ -13,6 +13,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Create plot 1')
     parser.add_argument('--filepath', '-f', required=True, type=str)
     parser.add_argument('--plotdir', '-d', required=False, type=str, default=f'plots/{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}/')
+    parser.add_argument('--numdatasets', '-n', required=False, default=30, type=int)
     args = parser.parse_args()
     return args
 
@@ -68,6 +69,6 @@ if __name__ == "__main__":
     datasets = [d for d in datasets if d in list(univariateDatasets.DATASET_NAME_TO_INFO.keys())]
     datasets.sort()
 
-    datasets = datasets[0:20]
+    datasets = datasets[0:args.numdatasets]
 
     render_plot(df, datasets, "fcm nn")

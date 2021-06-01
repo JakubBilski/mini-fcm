@@ -16,7 +16,7 @@ NO_COLUMNS = 3
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Merge csvs into one. Remove duplicate expreriments.')
+    parser = argparse.ArgumentParser(description='Display exxperiments progress')
     parser.add_argument('--filename', '-f', required=True, type=str)
     args = parser.parse_args()
     return args

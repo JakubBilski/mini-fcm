@@ -105,7 +105,7 @@ if __name__ == "__main__":
                 tested_datasets.append(dataset)
                 mccs.append(np.mean([float(acc) if acc!='?' else 0.0 for acc in dataset_df['accuracy']]))
 
-        tested_datasets = [td[0:6]+"..."+td[-1] if len(td) > 6 else td for td in tested_datasets]
+        tested_datasets = [td[0:6]+"..."+td[-1] if len(td) > 8 else td for td in tested_datasets]
         if method == 'hmm nn':
             label = method + " " + covariance
             color = covariance_to_color[covariance]

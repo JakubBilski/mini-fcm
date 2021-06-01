@@ -6,6 +6,7 @@ import argparse
 from pathlib import Path
 from datetime import datetime
 from matplotlib.ticker import LinearLocator, StrMethodFormatter
+from mpl_toolkits.mplot3d import Axes3D
 from loadingData import univariateDatasets
 import os
 

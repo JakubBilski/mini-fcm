@@ -37,12 +37,11 @@ def render_plot(df, datasets, method):
         tested_datasets.append(dataset)
         degenerated_shares.append(np.mean([float(ds) for ds in dataset_df['degenerated_share']]))
 
-
-    tested_datasets = [td[0:10] for td in tested_datasets]
+    tested_datasets = [td[0:6]+"..."+td[-1] if len(td) > 8 else td for td in tested_datasets]
     ax.bar(tested_datasets, degenerated_shares, color='royalblue')
 
     ax.set_ylabel('mean degenerated weights\' share')
-    ax.set_ylim([-0.05,1.05])
+    ax.set_ylim([-0.01,0.31])
     plt.xticks(rotation=45)
     
     if method == 'fcm nn':

@@ -73,7 +73,7 @@ def render_plot(df, method, covariance, num_states, num_inits, mutation, recombi
         means_iterations.append(mean_iterations)
         maxs_iterations.append(max_iterations)
 
-    tested_datasets = [td[0:10] for td in tested_datasets]
+    tested_datasets = [td[0:6]+"..."+td[-1] if len(td) > 8 else td for td in tested_datasets]
 
     ax.bar(tested_datasets, maxs_iterations, color=method_to_max_color[method], label="max")
     ax.bar(tested_datasets, means_iterations, color=method_to_mean_color[method], label="mean")
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     datasets = [d for d in datasets if d in list(univariateDatasets.DATASET_NAME_TO_INFO.keys())]
     datasets.sort()
 
-    datasets = datasets[0:args.num_datasets]
+    datasets = datasets[0:args.numdatasets]
 
     nums_states = ['3', '4', '5', '6', '7']
     covariances = ['spherical', 'diag', 'full']

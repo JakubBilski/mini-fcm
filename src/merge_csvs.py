@@ -8,7 +8,7 @@ from savingResults import csvSettings
 def parse_args():
     parser = argparse.ArgumentParser(description='Merge csvs into one. Remove duplicate expreriments.')
     parser.add_argument('--dirname', '-d', required=True, type=str)
-    parser.add_argument('--resultname', '-n', required=False, type=str, default='merge_result.csv')
+    parser.add_argument('--resultname', '-rn', required=False, type=str, default='merge_result.csv')
     args = parser.parse_args()
     return args
 

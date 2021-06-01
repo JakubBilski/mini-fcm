@@ -12,6 +12,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Create plot 1')
     parser.add_argument('--filepath', '-f', required=True, type=str)
     parser.add_argument('--plotdir', '-d', required=False, type=str, default=f'plots/{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}/')
+    parser.add_argument('--num_datasets', '-n', required=False, default=30, type=int)
     args = parser.parse_args()
     return args
 
@@ -72,11 +73,13 @@ def render_plot(df, method, covariance, num_states, num_inits, mutation, recombi
         means_iterations.append(mean_iterations)
         maxs_iterations.append(max_iterations)
 
+    tested_datasets = [td[0:10] for td in tested_datasets]
+
     ax.bar(tested_datasets, maxs_iterations, color=method_to_max_color[method], label="max")
     ax.bar(tested_datasets, means_iterations, color=method_to_mean_color[method], label="mean")
 
-    tested_datasets = [td[0:10] for td in tested_datasets]
-    if method == 'hmm nn':
+
+    if method == 'hmm nn' and len(learning_failed_datasets) > 0:
         failed_mask = [0 if d not in learning_failed_datasets else maxiter_thresholds[-1] for d in tested_datasets]
         ax.bar(tested_datasets, failed_mask, color='grey', label="learning failed")
 
@@ -111,7 +114,7 @@ if __name__ == "__main__":
     datasets = [d for d in datasets if d in list(univariateDatasets.DATASET_NAME_TO_INFO.keys())]
     datasets.sort()
 
-    datasets = datasets[0:20]
+    datasets = datasets[0:args.num_datasets]
 
     nums_states = ['3', '4', '5', '6', '7']
     covariances = ['spherical', 'diag', 'full']

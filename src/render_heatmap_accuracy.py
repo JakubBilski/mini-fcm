@@ -3,8 +3,6 @@ import pandas as pd
 import argparse
 import numpy as np
 from pathlib import Path
-import matplotlib.patches as mpatches
-import matplotlib.ticker as ticker
 from datetime import datetime
 from loadingData import univariateDatasets
 import os

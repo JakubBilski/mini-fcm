@@ -37,10 +37,12 @@ if __name__ == "__main__":
     method_to_num_experiments = {}
     method_to_num_experiments['fcm nn'] = 360
     method_to_num_experiments['hmm nn'] = 270
+    method_to_num_experiments['hmm nn'] = 270
 
     method_to_color = {}
     method_to_color['hmm nn'] = 'hotpink'
     method_to_color['fcm nn'] = 'royalblue'
+    method_to_color['vsfcm nn'] = 'lightsteelblue'
 
     COLOR_COVARIANCE = True
     covariance_to_color = {}
@@ -52,6 +54,7 @@ if __name__ == "__main__":
 
     methods_and_covariances = []
     methods_and_covariances.append(("fcm nn", "?"))
+    methods_and_covariances.append(("vsfcm nn", "?"))
     methods_and_covariances.append(("hmm nn", "spherical"))
     methods_and_covariances.append(("hmm nn", "diag"))
     methods_and_covariances.append(("hmm nn", "full"))
@@ -66,22 +69,18 @@ if __name__ == "__main__":
     fcm_chosen_params['recombination'] = '0.5'
     fcm_chosen_params['popsize'] = '10'
 
+    vsfcm_chosen_params = {}
+    vsfcm_chosen_params['maxiter'] = '150'
+    vsfcm_chosen_params['mutation'] = '0.5'
+    vsfcm_chosen_params['recombination'] = '0.5'
+    vsfcm_chosen_params['popsize'] = '10'
+
     datasets = list(set(df['dataset']))
     datasets = [d for d in datasets if d in list(univariateDatasets.DATASET_NAME_TO_INFO.keys())]
     datasets.sort()
 
     for dataset in datasets:
         dataset_df = df[df['dataset'] == dataset]
-
-        skip = False
-        for method, num_experiments in method_to_num_experiments.items():
-            num_rows = dataset_df[dataset_df['method'] == method].shape[0]
-            if num_rows != method_to_num_experiments[method]:
-                print(f"Skipping {dataset} (only {num_rows} rows for {method})")
-                skip = True
-                break
-        if skip:
-            continue
 
         fig, ax = plt.subplots(1, figsize=(8, 8), dpi=100)
         
@@ -91,6 +90,7 @@ if __name__ == "__main__":
         ys_two_failed = []
         xs_three_failed = []
         ys_three_failed = []
+        skip = False
         for method, covariance in methods_and_covariances:
             method_df = dataset_df[dataset_df['method'] == method]
             method_df = method_df[method_df['covariance_type'] == covariance]
@@ -98,12 +98,20 @@ if __name__ == "__main__":
             if method == 'hmm nn':
                 label += f" {covariance}"
                 chosen_params = hmm_chosen_params
-            else:
+            elif method == 'fcm nn':
                 chosen_params = fcm_chosen_params
+            else:
+                chosen_params = vsfcm_chosen_params
 
             for key, value in chosen_params.items():
                 # label += f", {key}: {value}"
                 method_df = method_df[method_df[key] == value]
+
+            num_rows = method_df.shape[0]
+            if num_rows != 3*5:
+                print(f"Skipping {dataset} (only {num_rows} rows for {method})")
+                skip = True
+                break
 
             x_to_accuracies = {}
             x_to_nums_failed_learning = {}
@@ -123,8 +131,10 @@ if __name__ == "__main__":
                             num_parameters += 4*no_states
                         else:
                             raise Exception("Unknown covariance type")
-                    else:
+                    elif method == 'fcm nn':
                         num_parameters = no_states*no_states
+                    else:
+                        num_parameters = no_states*(no_states-1)
                     x=num_parameters
                 
                 if row['accuracy'] == '?':
@@ -171,6 +181,10 @@ if __name__ == "__main__":
             else:
                 ax.scatter(xs, ys, color=color, label=label)
                 ax.plot(xs, ys, color=color)
+
+        if skip:
+            plt.close()
+            continue
 
         if should_failed_circles:
             marker_size = 3.0*mpl.rcParams['lines.markersize'] ** 2

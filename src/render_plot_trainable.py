@@ -211,7 +211,7 @@ if __name__ == "__main__":
         if should_draw_scatter:
             ax.set_ylabel('accuracy')
         else:
-            ax.set_ylabel('mean 3-fold cross-validation accuracy')
+            ax.set_ylabel('3-fold cross-validation accuracy')
         ax.set_ylim([-0.05,1.05])
         plt.legend()
         plt.suptitle(f'Performance of selected models: {dataset} ({no_classes} classes, train size {train_size}, series len {series_length})')

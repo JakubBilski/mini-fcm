@@ -200,7 +200,6 @@ def cross_validation_folds(xses_series, ys, k):
 def parse_args():
     parser = argparse.ArgumentParser(description='Running ')
     parser.add_argument('--dataset_id', '-d', required=True, choices=range(0,85), type=int)
-    parser.add_argument('--states', '-s', nargs='+', required=False, type=int, default=[3, 4, 5, 6, 7])
     parser.add_argument(
         '--method',
         '-m',
@@ -209,13 +208,11 @@ def parse_args():
         type=str)
     parser.add_argument('--resultsdir', '-rd', required=False, type=str, default=f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
     parser.add_argument('--skipfile', '-sf', required=False, type=str)
+    parser.add_argument('--bigstates', '-b', required=False, action='store_true')
     args = parser.parse_args()
     args.method = f"{args.method[0]} {args.method[1]}"
-    print(args.dataset_id)
-    print(args.states)
-    print(args.method)
-    print(args.resultsdir)
-    print(args.skipfile)
+    if args.bigstates and args.method != 'hmm nn' and args.method != 'fcm nn':
+        raise argparse.ArgumentTypeError('--bigstates is only valid with fcm nn or hmm nn method')
     return args
 
 
@@ -239,24 +236,48 @@ if __name__ == "__main__":
     csv_results_file.close()
 
     datasets = list(univariateDatasets.DATASET_NAME_TO_INFO.keys())
-
     if args.dataset_id is not None:
         datasets = [datasets[args.dataset_id]]
 
     tested_methods = [args.method]
-    # tested_methods = ['sfcm nn', 'hmm nn', 'fcm 1c', 'hmm 1c', 'fcm nn', 'vsfcm nn']
 
-    tested_nos_states = [int(x) for x in args.states]
+    if args.bigstates:
+        tested_nums_states = [8, 9, 10, 12, 16]
+    else:
+        tested_nums_states = [3, 4, 5, 6, 7]
 
     if args.method == 'fcm nn':
-        tested_max_iters = [150, 200, 250]
         tested_nos_random_initializations = ['?']
         tested_covariance_types = ['?']
-        tested_mutations = [0.5, 0.8]
-        tested_recombinations = [0.5, 0.9]
-        tested_popsizes = [10, 15]
+        if args.bigstates:
+            tested_max_iters = [150]
+            tested_mutations = [0.5]
+            tested_recombinations = [0.5]
+            tested_popsizes = [10]
+        else:
+            tested_max_iters = [150, 200, 250]
+            tested_mutations = [0.5, 0.8]
+            tested_recombinations = [0.5, 0.9]
+            tested_popsizes = [10, 15]
     elif args.method == 'hmm nn':
-        tested_max_iters = [50, 100, 150]
+        tested_nos_random_initializations = [1, 10]
+        tested_covariance_types = ['spherical', 'diag', 'full']
+        tested_mutations = ['?']
+        tested_recombinations = ['?']
+        tested_popsizes = ['?']
+        if args.bigstates:
+            tested_max_iters = [50]
+        else:   
+            tested_max_iters = [50, 100, 150]
+    elif args.method == 'fcm 1c':
+        tested_max_iters = [150]
+        tested_nos_random_initializations = ['?']
+        tested_covariance_types = ['?']
+        tested_mutations = [0.5]
+        tested_recombinations = [0.5]
+        tested_popsizes = [10]
+    elif args.method == 'hmm 1c':
+        tested_max_iters = [50]
         tested_nos_random_initializations = [1, 10]
         tested_covariance_types = ['spherical', 'diag', 'full']
         tested_mutations = ['?']
@@ -270,10 +291,9 @@ if __name__ == "__main__":
         tested_recombinations = [0.5]
         tested_popsizes = [10]
 
-
     parameters = list(itertools.product(
         tested_methods,
-        tested_nos_states,
+        tested_nums_states,
         tested_max_iters,
         tested_nos_random_initializations,
         tested_covariance_types,

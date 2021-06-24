@@ -16,6 +16,7 @@ def parse_args():
     parser.add_argument('--nofailedcircles', required=False, action='store_true')
     parser.add_argument('--states', required=False, action='store_true')
     parser.add_argument('--vsfcm', required=False, action='store_true')
+    parser.add_argument('--oneclass', required=False, action='store_true')
     args = parser.parse_args()
     return args
 
@@ -33,12 +34,13 @@ if __name__ == "__main__":
     csv_path = args.filepath
     df = pd.read_csv(csv_path, dtype="str")
     print(df.head())
-
-    df = df[df['no_states'] <= '7']
+    # df = df[df['no_states'].astype(int) <= 7]
 
     method_to_color = {}
     method_to_color['hmm nn'] = 'hotpink'
     method_to_color['fcm nn'] = 'royalblue'
+    method_to_color['hmm 1c'] = 'hotpink'
+    method_to_color['fcm 1c'] = 'royalblue'
     method_to_color['vsfcm nn'] = 'lightsteelblue'
 
     COLOR_COVARIANCE = True
@@ -49,16 +51,24 @@ if __name__ == "__main__":
 
     failed_color = 'grey'
 
-    methods_and_covariances = []
-    methods_and_covariances.append(("fcm nn", "?"))
-    if with_vsfcm:
-        methods_and_covariances.append(("vsfcm nn", "?"))
-    methods_and_covariances.append(("hmm nn", "spherical"))
-    methods_and_covariances.append(("hmm nn", "diag"))
-    methods_and_covariances.append(("hmm nn", "full"))
+    if args.oneclass:
+        methods_and_covariances = []
+        methods_and_covariances.append(("fcm 1c", "?"))
+        methods_and_covariances.append(("hmm 1c", "spherical"))
+        methods_and_covariances.append(("hmm 1c", "diag"))
+        methods_and_covariances.append(("hmm 1c", "full"))
+    else:
+        methods_and_covariances = []
+        methods_and_covariances.append(("fcm nn", "?"))
+        if with_vsfcm:
+            methods_and_covariances.append(("vsfcm nn", "?"))
+        methods_and_covariances.append(("hmm nn", "spherical"))
+        methods_and_covariances.append(("hmm nn", "diag"))
+        methods_and_covariances.append(("hmm nn", "full"))
+
 
     hmm_chosen_params = {}
-    hmm_chosen_params['maxiter'] = '150'
+    hmm_chosen_params['maxiter'] = '50'
     hmm_chosen_params['no_random_initializations'] = '10'
 
     fcm_chosen_params = {}
@@ -72,6 +82,12 @@ if __name__ == "__main__":
     vsfcm_chosen_params['mutation'] = '0.5'
     vsfcm_chosen_params['recombination'] = '0.5'
     vsfcm_chosen_params['popsize'] = '10'
+
+    if args.oneclass:
+        expected_no_rows = 3*5
+    else:
+        expected_no_rows = 3*10
+
 
     datasets = list(set(df['dataset']))
     datasets = [d for d in datasets if d in list(univariateDatasets.DATASET_NAME_TO_INFO.keys())]
@@ -93,10 +109,10 @@ if __name__ == "__main__":
             method_df = dataset_df[dataset_df['method'] == method]
             method_df = method_df[method_df['covariance_type'] == covariance]
             label = method
-            if method == 'hmm nn':
+            if method == 'hmm nn' or method == 'hmm 1c':
                 label += f" {covariance}"
                 chosen_params = hmm_chosen_params
-            elif method == 'fcm nn':
+            elif method == 'fcm nn' or method == 'fcm 1c':
                 chosen_params = fcm_chosen_params
             else:
                 chosen_params = vsfcm_chosen_params
@@ -106,7 +122,7 @@ if __name__ == "__main__":
                 method_df = method_df[method_df[key] == value]
 
             num_rows = method_df.shape[0]
-            if num_rows != 3*5:
+            if num_rows != expected_no_rows:
                 print(f"Skipping {dataset} (only {num_rows} rows for {method})")
                 skip = True
                 break
@@ -119,7 +135,7 @@ if __name__ == "__main__":
                 if should_x_states:
                     x=no_states
                 else:
-                    if method == 'hmm nn':
+                    if method == 'hmm nn' or method == 'hmm 1c':
                         num_parameters = no_states*no_states+no_states
                         if covariance == 'spherical':
                             num_parameters += no_states
@@ -172,7 +188,7 @@ if __name__ == "__main__":
                         ys_three_failed.append(y)
 
             color = method_to_color[method]
-            if method == 'hmm nn':
+            if method == 'hmm nn' or method == 'hmm 1c':
                 color = covariance_to_color[covariance]
             if should_draw_scatter:
                 ax.scatter(xs, ys, color=color, label=label)
@@ -207,7 +223,10 @@ if __name__ == "__main__":
         if should_x_states:
             ax.set_xlabel('number of states/centers')
         else:
-            ax.set_xlabel('number of trainable parameters')
+            if args.oneclass:
+                ax.set_xlabel('number of trainable parameters for one class')
+            else:
+                ax.set_xlabel('number of trainable parameters for one series')
         if should_draw_scatter:
             ax.set_ylabel('accuracy')
         else:

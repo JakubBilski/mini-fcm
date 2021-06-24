@@ -67,27 +67,27 @@ if __name__ == '__main__':
     else:
         display_problem_progress(rows, 360)
 
-    print("FMC: number of classes 8-9, 12, 16")
-    print("maxiter [150, 200, 250]")
-    print("mutation [0.5, 0.8]")
-    print("recombination [0.5, 0.9]")
-    print("popsize [10, 15]")
-    rows = [row for row in csv_rows if row[1] == 'fcm nn' and int(row[4]) in [8, 9, 12, 16]]
+    print("FMC: number of classes 8, 9, 10, 12, 16")
+    print("maxiter [150]")
+    print("mutation [0.5]")
+    print("recombination [0.5]")
+    print("popsize [10]")
+    rows = [row for row in csv_rows if row[1] == 'fcm nn' and int(row[4]) in [8, 9, 10, 12, 16]]
     if len(rows) == 0:
         print("____________________\nNo experiments found\n")
     else:
-        display_problem_progress(rows, 288)
+        display_problem_progress(rows, 15)
 
     print("FMC one per class: number of classes 3-7")
-    print("maxiter ?")
-    print("mutation ?")
-    print("recombination ?")
-    print("popsize ?")
+    print("maxiter 150")
+    print("mutation 0.5")
+    print("recombination 0.5")
+    print("popsize 10")
     rows = [row for row in csv_rows if row[1] == 'fcm 1c' and int(row[4]) in [3, 4, 5, 6, 7]]
     if len(rows) == 0:
         print("____________________\nNo experiments found\n")
     else:
-        display_problem_progress(rows, 288)
+        display_problem_progress(rows, 15)
 
     print("HMM: number of states 3-7")
     print("maxiter [50, 100, 150]")
@@ -100,22 +100,34 @@ if __name__ == '__main__':
         display_problem_progress(rows, 270)
 
     print("HMM: number of states 8-9, 12, 16")
-    print("maxiter [50, 100, 150]")
+    print("maxiter [50]")
     print("num random inits [1, 10]")
     print("covariance type ['spherical', 'diag', 'full']")
     rows = [row for row in csv_rows if row[1] == 'hmm nn' and int(row[4]) in [8, 9, 12, 16]]
     if len(rows) == 0:
         print("____________________\nNo experiments found\n")
     else:
-        display_problem_progress(rows, 216)
+        display_problem_progress(rows, 72)
 
 
-    print("HMM one class: number of states 3-7")
-    print("maxiter ?")
-    print("num random inits ?")
-    print("covariance type ?")
+    print("HMM one per class: number of states 3-7")
+    print("maxiter [50]")
+    print("num random inits [1, 10]")
+    print("covariance type ['spherical', 'diag', 'full']")
     rows = [row for row in csv_rows if row[1] == 'hmm 1c' and int(row[4]) in [3, 4, 5, 6, 7]]
     if len(rows) == 0:
         print("____________________\nNo experiments found\n")
     else:
-        display_problem_progress(rows, 162)
+        display_problem_progress(rows, 90)
+
+
+    print("VSFMC: number of classes 3-7")
+    print("maxiter [150]")
+    print("mutation [0.5]")
+    print("recombination [0.5]")
+    print("popsize [10]")
+    rows = [row for row in csv_rows if row[1] == 'vsfcm nn' and int(row[4]) in [3, 4, 5, 6, 7]]
+    if len(rows) == 0:
+        print("____________________\nNo experiments found\n")
+    else:
+        display_problem_progress(rows, 15)

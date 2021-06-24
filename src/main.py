@@ -209,6 +209,7 @@ def parse_args():
     parser.add_argument('--resultsdir', '-rd', required=False, type=str, default=f'{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}')
     parser.add_argument('--skipfile', '-sf', required=False, type=str)
     parser.add_argument('--bigstates', '-b', required=False, action='store_true')
+    parser.add_argument('--fold', '-f', required=False, type=int)
     args = parser.parse_args()
     args.method = f"{args.method[0]} {args.method[1]}"
     if args.bigstates and args.method != 'hmm nn' and args.method != 'fcm nn':
@@ -302,6 +303,13 @@ if __name__ == "__main__":
         tested_popsizes
     ))
 
+    if args.fold is not None:
+        if args.fold not in [0, 1, 2]:
+            raise argparse.ArgumentTypeError('--fold must be from [0, 1, 2]')
+        chosen_folds = [args.fold]
+    else:
+        chosen_folds = list(range(3))
+
     for dataset_name in datasets:
         print(f"Preprocessing {dataset_name}")
         train_xses_series, train_ys, test_xses_series, test_ys = load_preprocessed_data(
@@ -312,7 +320,7 @@ if __name__ == "__main__":
         folds = cross_validation_folds(train_xses_series, train_ys, 3)
 
         for method_name, no_states, max_iter, no_rand_init, cov_type, mut, recomb, popsize in parameters:
-            for f in range(len(folds)):
+            for f in chosen_folds:
                 was_already_tested = False
                 for at_row in already_tested_rows:
                     if at_row[0] == str(dataset_name) and \

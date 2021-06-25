@@ -115,6 +115,7 @@ if __name__ == "__main__":
         xs_three_failed = []
         ys_three_failed = []
         skip = False
+
         for method, covariance in methods_and_covariances:
             method_df = dataset_df[dataset_df['method'] == method]
             method_df = method_df[method_df['covariance_type'] == covariance]
@@ -185,6 +186,8 @@ if __name__ == "__main__":
                 dictitems = x_to_times.items() 
             else:
                 dictitems = x_to_accuracies.items()
+            
+
 
             xs = []
             ys = []
@@ -246,6 +249,8 @@ if __name__ == "__main__":
                 ax.scatter(xs_three_failed, ys_three_failed, s=marker_size,
                     marker=mpl.markers.MarkerStyle('s', fillstyle='full'), linestyle="None",
                     edgecolors=failed_color, facecolors=failed_color, label='failed to learn in three folds')
+        
+
 
         dataset_info = univariateDatasets.DATASET_NAME_TO_INFO[dataset]
         no_classes = dataset_info[3]

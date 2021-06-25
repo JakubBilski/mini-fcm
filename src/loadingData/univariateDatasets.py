@@ -55,7 +55,7 @@ DATASET_NAME_TO_INFO = {
         "Phoneme":(1896, 214, 1024, 39),
         "Plane": (105, 105, 144, 7), 
         "ProximalPhalanxOutlineAgeGroup": (400, 205, 80, 3), 
-        "ProximalPhalanxOutlineCorrect": (600, 291, 80, 2), 
+        "ProximalPhalanxOutlineCorrect": (600, 291, 80, 2),
         "ProximalPhalanxTW": (400, 205, 80, 6), 
         "RefrigerationDevices": (375, 375, 720, 3),
         "ScreenType": (375, 375, 720, 3),

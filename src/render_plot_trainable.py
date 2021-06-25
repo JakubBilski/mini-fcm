@@ -16,7 +16,9 @@ def parse_args():
     parser.add_argument('--nofailedcircles', required=False, action='store_true')
     parser.add_argument('--states', required=False, action='store_true')
     parser.add_argument('--vsfcm', required=False, action='store_true')
-    parser.add_argument('--oneclass', required=False, action='store_true')
+    parser.add_argument('--onlynn', required=False, action='store_true')
+    parser.add_argument('--only1c', required=False, action='store_true')
+    parser.add_argument('--time', required=False, action='store_true')
     args = parser.parse_args()
     return args
 
@@ -28,6 +30,7 @@ if __name__ == "__main__":
 
     should_draw_scatter = args.scatter
     should_x_states = args.states
+    should_y_time = args.time
     should_failed_circles = not args.nofailedcircles
     with_vsfcm = args.vsfcm
 
@@ -37,28 +40,29 @@ if __name__ == "__main__":
     # df = df[df['no_states'].astype(int) <= 7]
 
     method_to_color = {}
-    method_to_color['hmm nn'] = 'hotpink'
     method_to_color['fcm nn'] = 'royalblue'
-    method_to_color['hmm 1c'] = 'hotpink'
-    method_to_color['fcm 1c'] = 'royalblue'
+    method_to_color['fcm 1c'] = 'forestgreen'
     method_to_color['vsfcm nn'] = 'lightsteelblue'
 
-    COLOR_COVARIANCE = True
-    covariance_to_color = {}
-    covariance_to_color['spherical'] = "pink"
-    covariance_to_color['diag'] = "orchid"
-    covariance_to_color['full'] = "hotpink"
+    covariance_to_color_nn = {}
+    covariance_to_color_nn['spherical'] = "pink"
+    covariance_to_color_nn['diag'] = "hotpink"
+    covariance_to_color_nn['full'] = "purple"
+
+    covariance_to_color_1c = {}
+    covariance_to_color_1c['spherical'] = "orange"
+    covariance_to_color_1c['diag'] = "orangered"
+    covariance_to_color_1c['full'] = "firebrick"
 
     failed_color = 'grey'
 
-    if args.oneclass:
-        methods_and_covariances = []
+    methods_and_covariances = []
+    if not args.onlynn:
         methods_and_covariances.append(("fcm 1c", "?"))
         methods_and_covariances.append(("hmm 1c", "spherical"))
         methods_and_covariances.append(("hmm 1c", "diag"))
         methods_and_covariances.append(("hmm 1c", "full"))
-    else:
-        methods_and_covariances = []
+    if not args.only1c:
         methods_and_covariances.append(("fcm nn", "?"))
         if with_vsfcm:
             methods_and_covariances.append(("vsfcm nn", "?"))
@@ -83,15 +87,21 @@ if __name__ == "__main__":
     vsfcm_chosen_params['recombination'] = '0.5'
     vsfcm_chosen_params['popsize'] = '10'
 
-    if args.oneclass:
-        expected_no_rows = 3*5
-    else:
-        expected_no_rows = 3*10
+    expected_no_rows = {}
+    expected_no_rows['hmm nn'] = 30
+    expected_no_rows['fcm nn'] = 30
+    expected_no_rows['hmm 1c'] = 15
+    expected_no_rows['fcm 1c'] = 15
+    expected_no_rows['vsfcm nn'] = 15
 
 
     datasets = list(set(df['dataset']))
     datasets = [d for d in datasets if d in list(univariateDatasets.DATASET_NAME_TO_INFO.keys())]
     datasets.sort()
+
+    label_to_summary_plot_xs = {}
+    label_to_summary_plot_ys = {}
+    label_to_summary_plot_color = {}
 
     for dataset in datasets:
         dataset_df = df[df['dataset'] == dataset]
@@ -122,11 +132,12 @@ if __name__ == "__main__":
                 method_df = method_df[method_df[key] == value]
 
             num_rows = method_df.shape[0]
-            if num_rows != expected_no_rows:
+            if num_rows != expected_no_rows[method]:
                 print(f"Skipping {dataset} (only {num_rows} rows for {method})")
                 skip = True
                 break
 
+            x_to_times = {}
             x_to_accuracies = {}
             x_to_nums_failed_learning = {}
 
@@ -145,26 +156,36 @@ if __name__ == "__main__":
                             num_parameters += 4*no_states
                         else:
                             raise Exception("Unknown covariance type")
-                    elif method == 'fcm nn':
+                    elif method == 'fcm nn' or method == 'fcm 1c':
                         num_parameters = no_states*no_states
-                    else:
+                    elif method == 'vsfcm nn':
                         num_parameters = no_states*(no_states-1)
+                    else:
+                        raise Exception("Unknown method type")
                     x=num_parameters
                 
                 if row['accuracy'] == '?':
-                    accuracy=0
-                    num_failed_learning=1
+                    accuracy = 0
+                    time = 0
+                    num_failed_learning = 1
                 else:
-                    accuracy=float(row['accuracy'])
-                    num_failed_learning=0
+                    accuracy = float(row['accuracy'])
+                    time = float(row['complete_execution_time'])
+                    num_failed_learning = 0
                 if x in x_to_accuracies.keys():
                     x_to_accuracies[x].append(accuracy)
                     x_to_nums_failed_learning[x] += num_failed_learning
+                    x_to_times[x].append(time)
                 else:
                     x_to_accuracies[x] = [accuracy]
                     x_to_nums_failed_learning[x] = num_failed_learning
+                    x_to_times[x] = [time]
 
-            dictitems = x_to_accuracies.items()
+            if should_y_time:
+                dictitems = x_to_times.items() 
+            else:
+                dictitems = x_to_accuracies.items()
+
             xs = []
             ys = []
             if should_draw_scatter:
@@ -187,14 +208,25 @@ if __name__ == "__main__":
                         xs_three_failed.append(x)
                         ys_three_failed.append(y)
 
-            color = method_to_color[method]
-            if method == 'hmm nn' or method == 'hmm 1c':
-                color = covariance_to_color[covariance]
+            if method == 'hmm nn':
+                color = covariance_to_color_nn[covariance]
+            elif method == 'hmm 1c':
+                color = covariance_to_color_1c[covariance]
+            else:
+                color = method_to_color[method]
             if should_draw_scatter:
                 ax.scatter(xs, ys, color=color, label=label)
             else:
                 ax.scatter(xs, ys, color=color, label=label)
                 ax.plot(xs, ys, color=color)
+
+            if label in label_to_summary_plot_xs.keys():
+                label_to_summary_plot_xs[label].extend(xs)
+                label_to_summary_plot_ys[label].extend(ys)
+            else:
+                label_to_summary_plot_xs[label] = xs
+                label_to_summary_plot_ys[label] = ys
+                label_to_summary_plot_color[label] = color
 
         if skip:
             plt.close()
@@ -205,15 +237,15 @@ if __name__ == "__main__":
             if len(xs_one_failed) > 0:
                 ax.scatter(xs_one_failed, ys_one_failed, s=marker_size,
                     marker=mpl.markers.MarkerStyle('x'), linestyle="None",
-                    edgecolors=failed_color, facecolors=failed_color, label='failed to learn one fold')
+                    edgecolors=failed_color, facecolors=failed_color, label='failed to learn in one fold')
             if len(xs_two_failed) > 0:
                 ax.scatter(xs_two_failed, ys_two_failed, s=marker_size,
                     marker=mpl.markers.MarkerStyle('d'), linestyle="None",
-                    edgecolors=failed_color, facecolors=failed_color, label='failed to learn two folds')
+                    edgecolors=failed_color, facecolors=failed_color, label='failed to learn in two folds')
             if len(xs_three_failed) > 0:
                 ax.scatter(xs_three_failed, ys_three_failed, s=marker_size,
                     marker=mpl.markers.MarkerStyle('s', fillstyle='full'), linestyle="None",
-                    edgecolors=failed_color, facecolors=failed_color, label='failed to learn three folds')
+                    edgecolors=failed_color, facecolors=failed_color, label='failed to learn in three folds')
 
         dataset_info = univariateDatasets.DATASET_NAME_TO_INFO[dataset]
         no_classes = dataset_info[3]
@@ -223,17 +255,59 @@ if __name__ == "__main__":
         if should_x_states:
             ax.set_xlabel('number of states/centers')
         else:
-            if args.oneclass:
-                ax.set_xlabel('number of trainable parameters for one class')
-            else:
-                ax.set_xlabel('number of trainable parameters for one series')
-        if should_draw_scatter:
-            ax.set_ylabel('accuracy')
+            ax.set_xlabel('number of trainable parameters for one model')
+        if should_y_time:
+            ax.set_ylabel('computation time [s]')
+            ax.set_yscale('symlog')
         else:
-            ax.set_ylabel('3-fold cross-validation accuracy')
-        ax.set_ylim([-0.05,1.05])
+            ax.set_ylim([-0.05,1.05])
+            if should_draw_scatter:
+                ax.set_ylabel('accuracy')
+            else:
+                ax.set_ylabel('3CV accuracy')
         plt.legend()
         plt.suptitle(f'Performance of selected models: {dataset} ({no_classes} classes, train size {train_size}, series len {series_length})')
         # plt.show()
         plt.savefig(plots_dir / f'{dataset}.png')
         plt.close()
+
+    fig, ax = plt.subplots(1, figsize=(8, 8), dpi=100)
+    plt.subplots_adjust(wspace=0.0)
+    if should_x_states:
+        ax.set_xlabel('number of states/centers')
+    else:
+        ax.set_xlabel('number of trainable parameters for one model')
+    if should_y_time:
+        ax.set_ylabel('mean computation time [s]')
+        ax.set_yscale('symlog')
+    else:
+        ax.set_ylim([-0.05,1.05])
+        ax.set_ylabel('mean 3CV accuracy')
+
+    for label in label_to_summary_plot_xs.keys():
+        x_to_sum_ys = {}
+        x_to_num_ys = {}
+        xs = label_to_summary_plot_xs[label]
+        ys = label_to_summary_plot_ys[label]
+        for x, y in zip(xs, ys):
+            if x in x_to_sum_ys.keys():
+                x_to_sum_ys[x] += y
+                x_to_num_ys[x] += 1
+            else:
+                x_to_sum_ys[x] = y
+                x_to_num_ys[x] = 1
+        xs = []
+        ys = []
+        for x in x_to_sum_ys.keys():
+            xs.append(x)
+            ys.append(x_to_sum_ys[x] / x_to_num_ys[x])
+        color = label_to_summary_plot_color[label]
+
+        ax.scatter(xs, ys, color=color, label=label)
+        ax.plot(xs, ys, color=color)
+    
+    plt.legend()
+    plt.suptitle(f'Performance of selected models: all data')
+    # plt.show()
+    plt.savefig(plots_dir / f'ZZZAllDatasets.png')
+    plt.close()

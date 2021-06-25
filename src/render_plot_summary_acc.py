@@ -80,9 +80,9 @@ if __name__ == "__main__":
 
     method_to_color = {}
     method_to_color['hmm nn'] = 'hotpink'
-    method_to_color['hmm 1c'] = 'mediumvioletred'
+    method_to_color['hmm 1c'] = 'orange'
     method_to_color['fcm nn'] = 'royalblue'
-    method_to_color['fcm 1c'] = 'darkblue'
+    method_to_color['fcm 1c'] = 'forestgreen'
     method_to_color['vsfcm nn'] = 'grey'
 
     covariance_to_color = {}

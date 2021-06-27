@@ -106,7 +106,7 @@ if __name__ == "__main__":
     for dataset in datasets:
         dataset_df = df[df['dataset'] == dataset]
 
-        fig, ax = plt.subplots(1, figsize=(8, 8), dpi=100)
+        fig, ax = plt.subplots(1, figsize=(5, 5), dpi=100)
         
         xs_one_failed = []
         ys_one_failed = []
@@ -148,7 +148,7 @@ if __name__ == "__main__":
                     x=no_states
                 else:
                     if method == 'hmm nn' or method == 'hmm 1c':
-                        num_parameters = no_states*no_states+no_states
+                        num_parameters = no_states*no_states
                         if covariance == 'spherical':
                             num_parameters += no_states
                         elif covariance == 'diag':
@@ -260,7 +260,7 @@ if __name__ == "__main__":
         if should_x_states:
             ax.set_xlabel('number of states/centers')
         else:
-            ax.set_xlabel('number of trainable parameters for one model')
+            ax.set_xlabel('number of trainable parameters')
         if should_y_time:
             ax.set_ylabel('computation time [s]')
             ax.set_yscale('symlog')
@@ -271,9 +271,10 @@ if __name__ == "__main__":
             else:
                 ax.set_ylabel('3CV accuracy')
         plt.legend()
-        plt.suptitle(f'Performance of selected models: {dataset} ({no_classes} classes, train size {train_size}, series len {series_length})')
+        # plt.suptitle(f'Performance of selected models: {dataset} ({no_classes} classes, train size {train_size}, series len {series_length})')
+        plt.suptitle(f'{dataset}')
         # plt.show()
-        plt.savefig(plots_dir / f'{dataset}.png')
+        plt.savefig(plots_dir / f'{dataset}.png', bbox_inches='tight')
         plt.close()
 
     fig, ax = plt.subplots(1, figsize=(8, 8), dpi=100)
@@ -314,5 +315,5 @@ if __name__ == "__main__":
     plt.legend()
     plt.suptitle(f'Performance of selected models: all data')
     # plt.show()
-    plt.savefig(plots_dir / f'ZZZAllDatasets.png')
+    plt.savefig(plots_dir / f'ZZZAllDatasets.png', bbox_inches='tight')
     plt.close()

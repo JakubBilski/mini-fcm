@@ -12,8 +12,24 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Create plot 1')
     parser.add_argument('--filepath', '-f', required=True, type=str)
     parser.add_argument('--plotdir', '-d', required=False, type=str, default=f'plots/{datetime.now().strftime("%d-%m-%Y-%H-%M-%S")}/')
+    parser.add_argument('--fold_no', '-fn', required=False, type=int)
     args = parser.parse_args()
     return args
+
+
+def appropriate_label(name, method):
+    appropriate_labels = {}
+    if method == 'hmm nn':
+        appropriate_labels['no_states'] = "hidden states"
+    else:
+        appropriate_labels['no_states'] = "concepts"
+
+    appropriate_labels['maxiter'] = "maximal iterations"
+    appropriate_labels['no_random_initializations'] = "random initializations"
+    appropriate_labels['covariance_type'] = "covariance type"
+    if name in appropriate_labels.keys():
+        return appropriate_labels[name]
+    return name
 
 
 if __name__ == "__main__":
@@ -25,7 +41,7 @@ if __name__ == "__main__":
     df = pd.read_csv(csv_path, dtype="str")
     print(df.head())
 
-    df = df[df['no_states'] <= '7']
+    df = df[df['no_states'].astype(int) <= 7]
 
     method_to_x_keys = {}
     method_to_x_keys['hmm nn'] = ['no_states', 'maxiter', 'no_random_initializations', 'covariance_type']
@@ -34,6 +50,11 @@ if __name__ == "__main__":
     method_to_num_experiments = {}
     method_to_num_experiments['fcm nn'] = 360
     method_to_num_experiments['hmm nn'] = 270
+
+    if args.fold_no is not None:
+        df = df[df['fold_no'].astype(int) == args.fold_no]
+        for k in method_to_num_experiments.keys():
+            method_to_num_experiments[k] /= 3
 
     method_to_color = {}
     method_to_color['hmm nn'] = 'hotpink'
@@ -52,7 +73,7 @@ if __name__ == "__main__":
                 print(f"Skipping {dataset} (only {dataset_df.shape[0]} rows for {method})")
                 continue
 
-            fig, axs = plt.subplots(1, len(x_keys), figsize=(16, 5), dpi=100)
+            fig, axs = plt.subplots(1, len(x_keys), figsize=(10, 4), dpi=100)
 
             for k in range(len(x_keys)):
                 x_key = x_keys[k]
@@ -80,7 +101,7 @@ if __name__ == "__main__":
                 violin_parts['cmeans'].set_edgecolor("black")
                 axs[k].set_xticks(ticks)
                 axs[k].set_xticklabels(distinct_xs)
-                axs[k].set_xlabel(x_key)
+                axs[k].set_xlabel(appropriate_label(x_key, method))
                 axs[k].set_ylim([-0.05,1.05])
                 axs[k].margins(x=1/len(distinct_xs))
                 axs[k].patch.set_alpha(0.0)
@@ -100,9 +121,13 @@ if __name__ == "__main__":
             train_size = dataset_info[0]
             series_length = dataset_info[2]
             plt.subplots_adjust(wspace=0.0)
-            plt.suptitle(f'{method} {dataset} ({no_classes} classes, train size {train_size}, series len {series_length})')
+            # plt.suptitle(f'{method} {dataset} ({no_classes} classes, train size {train_size}, series len {series_length})')
+            if args.fold_no is None:
+                plt.suptitle(f'{dataset}')
+            else:
+                plt.suptitle(f'{dataset}, fold {args.fold_no}')
             # plt.show()
-            plt.savefig(plots_dir / f'{method}_{dataset}.png')
+            plt.savefig(plots_dir / f'{method}_{dataset}.png', bbox_inches='tight')
             plt.close()
 
 

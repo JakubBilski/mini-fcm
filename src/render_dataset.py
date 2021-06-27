@@ -56,7 +56,7 @@ if __name__ == "__main__":
         plt.subplots_adjust(wspace=0.0)
         suptitle = f'{dataset_name}: series {i}'
         plt.suptitle(suptitle)
-        ax.scatter(xs1, xs2, s=5, alpha=0.5)
+        ax.scatter(xs1, xs2, s=5, alpha=0.7)
         if args.arrows:
             ax.plot(xs1, xs2, linewidth=1, alpha=0.5)
         ax.set_xlim(0, 1)
@@ -92,5 +92,7 @@ if __name__ == "__main__":
                 ax.plot(xs1, xs2, linewidth=1, alpha=0.5)
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
-        plt.savefig(plots_dir / f'{dataset_name}_all.png')
+        ax.set_xlabel('x1')
+        ax.set_ylabel('x2')
+        plt.savefig(plots_dir / f'{dataset_name}_all.png', bbox_inches='tight')
         plt.close()

@@ -212,8 +212,8 @@ def parse_args():
     parser.add_argument('--fold', '-f', required=False, type=int)
     args = parser.parse_args()
     args.method = f"{args.method[0]} {args.method[1]}"
-    if args.bigstates and args.method != 'hmm nn' and args.method != 'fcm nn':
-        raise argparse.ArgumentTypeError('--bigstates is only valid with fcm nn or hmm nn method')
+    if args.bigstates and args.method != 'hmm nn' and args.method != 'fcm nn' and args.method != 'hmm 1c'  and args.method != 'fcm 1c':
+        raise argparse.ArgumentTypeError('--bigstates is only valid with some methods')
     return args
 
 
@@ -243,47 +243,24 @@ if __name__ == "__main__":
     tested_methods = [args.method]
 
     if args.bigstates:
-        tested_nums_states = [8, 9, 10, 12, 16]
+        tested_nums_states = [8, 9, 10, 12]
     else:
         tested_nums_states = [3, 4, 5, 6, 7]
 
-    if args.method == 'fcm nn':
+    if args.method == 'fcm nn' or args.method == 'fcm 1c':
         tested_nos_random_initializations = ['?']
         tested_covariance_types = ['?']
-        if args.bigstates:
-            tested_max_iters = [150]
-            tested_mutations = [0.5]
-            tested_recombinations = [0.5]
-            tested_popsizes = [10]
-        else:
-            tested_max_iters = [150, 200, 250]
-            tested_mutations = [0.5, 0.8]
-            tested_recombinations = [0.5, 0.9]
-            tested_popsizes = [10, 15]
-    elif args.method == 'hmm nn':
-        tested_nos_random_initializations = [1, 10]
-        tested_covariance_types = ['spherical', 'diag', 'full']
-        tested_mutations = ['?']
-        tested_recombinations = ['?']
-        tested_popsizes = ['?']
-        if args.bigstates:
-            tested_max_iters = [50]
-        else:   
-            tested_max_iters = [50, 100, 150]
-    elif args.method == 'fcm 1c':
         tested_max_iters = [150]
-        tested_nos_random_initializations = ['?']
-        tested_covariance_types = ['?']
         tested_mutations = [0.5]
         tested_recombinations = [0.5]
         tested_popsizes = [10]
-    elif args.method == 'hmm 1c':
-        tested_max_iters = [50]
-        tested_nos_random_initializations = [1, 10]
+    elif args.method == 'hmm nn' or args.method == 'hmm 1c':
+        tested_nos_random_initializations = [10]
         tested_covariance_types = ['spherical', 'diag', 'full']
         tested_mutations = ['?']
         tested_recombinations = ['?']
         tested_popsizes = ['?']
+        tested_max_iters = [50]
     elif args.method == 'vsfcm nn':
         tested_max_iters = [150]
         tested_nos_random_initializations = ['?']

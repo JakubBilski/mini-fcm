@@ -25,9 +25,9 @@ if __name__ == "__main__":
     df = pd.read_csv(csv_path, dtype="str")
     print(df.head())
 
-    df = df[df['no_states'] <= '7']
+    df = df[df['no_states'].astype(int) <= 7]
 
-    num_experiments = 3*5*5
+    num_experiments = 5*5
     color = 'royalblue'
     y_keys = ['degenerated_share', 'accuracy']
 
@@ -43,7 +43,7 @@ if __name__ == "__main__":
             print(f"Skipping {dataset} (only {dataset_df.shape[0]} rows)")
             continue
 
-        fig, axs = plt.subplots(2, 1, figsize=(7, 8), dpi=100)
+        fig, axs = plt.subplots(2, 1, figsize=(7, 4), dpi=100)
 
         for k in range(len(y_keys)):
             y_key = y_keys[k]
@@ -73,11 +73,11 @@ if __name__ == "__main__":
             violin_parts['cmeans'].set_edgecolor("black")
             axs[k].set_xticks(ticks)
             axs[k].set_xticklabels(distinct_xs)
-            axs[k].set_ylim([-0.03,1.03])
+            axs[k].set_ylim([-0.07,1.07])
             axs[k].margins(x=1/len(distinct_xs))
             axs[k].patch.set_alpha(0.0)
             if k==0:
-                axs[k].set_ylabel('degenerated weights\' share')
+                axs[k].set_ylabel('share of degenerated weights')
                 axs[k].tick_params(labelbottom=False, labeltop=False,
                     bottom=True, top=True)
             else:
@@ -91,9 +91,10 @@ if __name__ == "__main__":
         train_size = dataset_info[0]
         series_length = dataset_info[2]
         plt.subplots_adjust(hspace=0.0)
-        plt.suptitle(f'sigmoid tau: {dataset} ({no_classes} classes, train size {train_size}, series len {series_length})')
+        # plt.suptitle(f'sigmoid tau: {dataset} ({no_classes} classes, train size {train_size}, series len {series_length})')
+        plt.suptitle(f'{dataset}')
         # plt.show()
-        plt.savefig(plots_dir / f'{dataset}.png')
+        plt.savefig(plots_dir / f'{dataset}.png', bbox_inches='tight')
         plt.close()
 
     

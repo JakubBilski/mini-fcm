@@ -52,7 +52,7 @@ if __name__ == "__main__":
         plots_infos.append((i, xs1, xs2, y))
 
     for i, xs1, xs2, y in plots_infos:
-        fig, ax = plt.subplots(1, 1, figsize=(8, 8), dpi=100)
+        fig, ax = plt.subplots(1, 1, figsize=(5, 5), dpi=100)
         plt.subplots_adjust(wspace=0.0)
         suptitle = f'{dataset_name}: series {i}'
         plt.suptitle(suptitle)
@@ -61,6 +61,8 @@ if __name__ == "__main__":
             ax.plot(xs1, xs2, linewidth=1, alpha=0.5)
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
+        ax.set_xlabel('x1')
+        ax.set_ylabel('x2')
         # plt.show()
         plt.savefig(plots_dir / f'{dataset_name}_{i}.png')
         plt.close()
@@ -78,6 +80,8 @@ if __name__ == "__main__":
                         ax.plot(xs1, xs2, linewidth=1, alpha=0.5)
             ax.set_xlim(0, 1)
             ax.set_ylim(0, 1)
+            ax.set_xlabel('x1')
+            ax.set_ylabel('x2')
             plt.savefig(plots_dir / f'{dataset_name}_class{c}.png')
             plt.close()
 

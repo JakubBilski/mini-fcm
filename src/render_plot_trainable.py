@@ -19,6 +19,8 @@ def parse_args():
     parser.add_argument('--onlynn', required=False, action='store_true')
     parser.add_argument('--only1c', required=False, action='store_true')
     parser.add_argument('--time', required=False, action='store_true')
+    parser.add_argument('--iters', required=False, action='store_true')
+    parser.add_argument('--bigdatasets', required=False, action='store_true')
     args = parser.parse_args()
     return args
 
@@ -31,6 +33,7 @@ if __name__ == "__main__":
     should_draw_scatter = args.scatter
     should_x_states = args.states
     should_y_time = args.time
+    should_y_iters = args.iters
     should_failed_circles = not args.nofailedcircles
     with_vsfcm = args.vsfcm
 
@@ -42,7 +45,7 @@ if __name__ == "__main__":
     method_to_color = {}
     method_to_color['fcm nn'] = 'royalblue'
     method_to_color['fcm 1c'] = 'forestgreen'
-    method_to_color['vsfcm nn'] = 'lightsteelblue'
+    method_to_color['vsfcm nn'] = 'grey'
 
     covariance_to_color_nn = {}
     covariance_to_color_nn['spherical'] = "pink"
@@ -57,18 +60,23 @@ if __name__ == "__main__":
     failed_color = 'grey'
 
     methods_and_covariances = []
-    if not args.onlynn:
-        methods_and_covariances.append(("fcm 1c", "?"))
-        methods_and_covariances.append(("hmm 1c", "spherical"))
-        methods_and_covariances.append(("hmm 1c", "diag"))
-        methods_and_covariances.append(("hmm 1c", "full"))
-    if not args.only1c:
+    if with_vsfcm:
         methods_and_covariances.append(("fcm nn", "?"))
-        if with_vsfcm:
-            methods_and_covariances.append(("vsfcm nn", "?"))
-        methods_and_covariances.append(("hmm nn", "spherical"))
-        methods_and_covariances.append(("hmm nn", "diag"))
-        methods_and_covariances.append(("hmm nn", "full"))
+        methods_and_covariances.append(("vsfcm nn", "?"))
+        df = df[df['no_states'].astype(int) <= 7]
+    else:
+        if not args.onlynn:
+            methods_and_covariances.append(("fcm 1c", "?"))
+            methods_and_covariances.append(("hmm 1c", "spherical"))
+            methods_and_covariances.append(("hmm 1c", "diag"))
+            methods_and_covariances.append(("hmm 1c", "full"))
+        if not args.only1c:
+            methods_and_covariances.append(("fcm nn", "?"))
+            if with_vsfcm:
+                methods_and_covariances.append(("vsfcm nn", "?"))
+            methods_and_covariances.append(("hmm nn", "spherical"))
+            methods_and_covariances.append(("hmm nn", "diag"))
+            methods_and_covariances.append(("hmm nn", "full"))
 
 
     hmm_chosen_params = {}
@@ -96,7 +104,11 @@ if __name__ == "__main__":
 
 
     datasets = list(set(df['dataset']))
-    datasets = [d for d in datasets if d in list(univariateDatasets.DATASET_NAME_TO_INFO.keys())]
+    if args.bigdatasets:
+        bigs = univariateDatasets.get_long_sequences_datasets_keys()
+        datasets = [d for d in datasets if d in bigs]
+    else:
+        datasets = [d for d in datasets if d in list(univariateDatasets.DATASET_NAME_TO_INFO.keys())]
     datasets.sort()
 
     label_to_summary_plot_xs = {}
@@ -139,6 +151,7 @@ if __name__ == "__main__":
                 break
 
             x_to_times = {}
+            x_to_iters = {}
             x_to_accuracies = {}
             x_to_nums_failed_learning = {}
 
@@ -150,11 +163,11 @@ if __name__ == "__main__":
                     if method == 'hmm nn' or method == 'hmm 1c':
                         num_parameters = no_states*no_states
                         if covariance == 'spherical':
-                            num_parameters += no_states
+                            num_parameters += no_states*3
                         elif covariance == 'diag':
-                            num_parameters += 2*no_states
+                            num_parameters += no_states*4
                         elif covariance == 'full':
-                            num_parameters += 4*no_states
+                            num_parameters += no_states*5
                         else:
                             raise Exception("Unknown covariance type")
                     elif method == 'fcm nn' or method == 'fcm 1c':
@@ -172,22 +185,25 @@ if __name__ == "__main__":
                 else:
                     accuracy = float(row['accuracy'])
                     time = float(row['complete_execution_time'])
+                    iters = float(row['mean_no_iterations'])
                     num_failed_learning = 0
                 if x in x_to_accuracies.keys():
                     x_to_accuracies[x].append(accuracy)
                     x_to_nums_failed_learning[x] += num_failed_learning
                     x_to_times[x].append(time)
+                    x_to_iters[x].append(iters)
                 else:
                     x_to_accuracies[x] = [accuracy]
                     x_to_nums_failed_learning[x] = num_failed_learning
                     x_to_times[x] = [time]
+                    x_to_iters[x] = [iters]
 
             if should_y_time:
-                dictitems = x_to_times.items() 
+                dictitems = x_to_times.items()
+            elif should_y_iters:
+                dictitems = x_to_iters.items()
             else:
                 dictitems = x_to_accuracies.items()
-            
-
 
             xs = []
             ys = []
@@ -258,12 +274,20 @@ if __name__ == "__main__":
         series_length = dataset_info[2]
         plt.subplots_adjust(wspace=0.0)
         if should_x_states:
-            ax.set_xlabel('number of states/centers')
+            ax.set_xlabel('number of hidden states/concepts')
         else:
             ax.set_xlabel('number of trainable parameters')
         if should_y_time:
             ax.set_ylabel('computation time [s]')
             ax.set_yscale('symlog')
+        elif should_y_iters:
+            ax.set_ylabel('mean number of iterations in learning')
+            ax.axhline(50, color='black',linestyle='--', linewidth=1)
+            ax.axhline(150, color='black',linestyle='--', linewidth=1)
+            ax.set_yscale('symlog')
+            ax.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
+            ax.minorticks_off()
+            ax.set_yticks([25, 50, 75, 100, 125, 150])
         else:
             ax.set_ylim([-0.05,1.05])
             if should_draw_scatter:
@@ -277,15 +301,24 @@ if __name__ == "__main__":
         plt.savefig(plots_dir / f'{dataset}.png', bbox_inches='tight')
         plt.close()
 
-    fig, ax = plt.subplots(1, figsize=(8, 8), dpi=100)
+    fig, ax = plt.subplots(1, figsize=(5, 5), dpi=100)
     plt.subplots_adjust(wspace=0.0)
     if should_x_states:
-        ax.set_xlabel('number of states/centers')
+        ax.set_xlabel('number of hidden states/concepts')
     else:
         ax.set_xlabel('number of trainable parameters for one model')
     if should_y_time:
         ax.set_ylabel('mean computation time [s]')
         ax.set_yscale('symlog')
+    elif should_y_iters:
+        ax.set_ylabel('mean number of iterations in learning')
+        ax.axhline(50, color='black',linestyle='--', linewidth=1)
+        ax.axhline(150, color='black',linestyle='--', linewidth=1)
+        # ax.set_yticks([50, 100, 150])
+        ax.set_yscale('symlog')
+        ax.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
+        ax.minorticks_off()
+        ax.set_yticks([25, 50, 75, 100, 125, 150])
     else:
         ax.set_ylim([-0.05,1.05])
         ax.set_ylabel('mean 3CV accuracy')
@@ -313,7 +346,7 @@ if __name__ == "__main__":
         ax.plot(xs, ys, color=color)
     
     plt.legend()
-    plt.suptitle(f'Performance of selected models: all data')
+    plt.suptitle(f'all')
     # plt.show()
     plt.savefig(plots_dir / f'ZZZAllDatasets.png', bbox_inches='tight')
     plt.close()

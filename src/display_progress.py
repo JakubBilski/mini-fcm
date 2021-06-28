@@ -57,77 +57,102 @@ if __name__ == '__main__':
     csv_rows = list(csv.reader(csv_results_file))[1:]
 
     print("FMC: number of classes 3-7")
-    print("maxiter [150, 200, 250]")
-    print("mutation [0.5, 0.8]")
-    print("recombination [0.5, 0.9]")
-    print("popsize [10, 15]")
-    rows = [row for row in csv_rows if row[1] == 'fcm nn' and int(row[4]) in [3, 4, 5, 6, 7]]
-    if len(rows) == 0:
-        print("____________________\nNo experiments found\n")
-    else:
-        display_problem_progress(rows, 360)
-
-    print("FMC: number of classes 8, 9, 10, 12, 16")
     print("maxiter [150]")
     print("mutation [0.5]")
     print("recombination [0.5]")
     print("popsize [10]")
-    rows = [row for row in csv_rows if row[1] == 'fcm nn' and int(row[4]) in [8, 9, 10, 12, 16]]
-    if len(rows) == 0:
+    newrows = [row for row in csv_rows if row[1] == 'fcm nn' and int(row[4]) in [3, 4, 5, 6, 7] and row[5] == 150 and row[15] == 0.5 and row[16] == 0.5 and row[17] == 10]
+    if len(newrows) == 0:
         print("____________________\nNo experiments found\n")
     else:
-        display_problem_progress(rows, 15)
+        display_problem_progress(newrows, 15)
+
+    print("FMC: number of classes 8, 9, 12, 16")
+    print("maxiter [150]")
+    print("mutation [0.5]")
+    print("recombination [0.5]")
+    print("popsize [10]")
+    newrows = [row for row in csv_rows if row[1] == 'fcm nn' and int(row[4]) in [8, 9, 10, 12] and int(row[5]) == 150 and float(row[15]) == 0.5 and float(row[16]) == 0.5 and int(row[17]) == 10]
+    if len(newrows) == 0:
+        print("____________________\nNo experiments found\n")
+    else:
+        display_problem_progress(newrows, 12)
 
     print("FMC one per class: number of classes 3-7")
     print("maxiter 150")
     print("mutation 0.5")
     print("recombination 0.5")
     print("popsize 10")
-    rows = [row for row in csv_rows if row[1] == 'fcm 1c' and int(row[4]) in [3, 4, 5, 6, 7]]
-    if len(rows) == 0:
+    newrows = [row for row in csv_rows if row[1] == 'fcm 1c' and int(row[4]) in [3, 4, 5, 6, 7] and int(row[5]) == 150 and float(row[15]) == 0.5 and float(row[16]) == 0.5 and int(row[17]) == 10]
+    if len(newrows) == 0:
         print("____________________\nNo experiments found\n")
     else:
-        display_problem_progress(rows, 15)
+        display_problem_progress(newrows, 15)
+
+        
+    print("FMC one per class: number of classes 8, 9, 10, 12")
+    print("maxiter 150")
+    print("mutation 0.5")
+    print("recombination 0.5")
+    print("popsize 10")
+    newrows = [row for row in csv_rows if row[1] == 'fcm 1c' and int(row[4]) in [8, 9, 10, 12] and int(row[5]) == 150 and float(row[15]) == 0.5 and float(row[16]) == 0.5 and int(row[17]) == 10]
+    if len(newrows) == 0:
+        print("____________________\nNo experiments found\n")
+    else:
+        display_problem_progress(newrows, 12)
 
     print("HMM: number of states 3-7")
-    print("maxiter [50, 100, 150]")
-    print("num random inits [1, 10]")
+    print("maxiter 50")
+    print("num random inits 10")
     print("covariance type ['spherical', 'diag', 'full']")
-    rows = [row for row in csv_rows if row[1] == 'hmm nn' and int(row[4]) in [3, 4, 5, 6, 7]]
-    if len(rows) == 0:
+    newrows = [row for row in csv_rows if row[1] == 'hmm nn' and int(row[4]) in [3, 4, 5, 6, 7] and int(row[5]) == 50 and int(row[13]) == 10]
+    if len(newrows) == 0:
         print("____________________\nNo experiments found\n")
     else:
-        display_problem_progress(rows, 270)
+        display_problem_progress(newrows, 45)
 
-    print("HMM: number of states 8-9, 12, 16")
+    print("HMM: number of states 8, 9, 10, 12")
     print("maxiter [50]")
     print("num random inits [1, 10]")
     print("covariance type ['spherical', 'diag', 'full']")
-    rows = [row for row in csv_rows if row[1] == 'hmm nn' and int(row[4]) in [8, 9, 12, 16]]
-    if len(rows) == 0:
+    newrows = [row for row in csv_rows if row[1] == 'hmm nn' and int(row[4]) in [8, 9, 10, 12] and int(row[5]) == 50 and int(row[13]) == 10]
+    if len(newrows) == 0:
         print("____________________\nNo experiments found\n")
     else:
-        display_problem_progress(rows, 72)
+        display_problem_progress(newrows, 36)
 
 
     print("HMM one per class: number of states 3-7")
     print("maxiter [50]")
-    print("num random inits [1, 10]")
+    print("num random inits 10")
     print("covariance type ['spherical', 'diag', 'full']")
-    rows = [row for row in csv_rows if row[1] == 'hmm 1c' and int(row[4]) in [3, 4, 5, 6, 7]]
-    if len(rows) == 0:
+    print(csv_rows[0])
+    newrows = [row for row in csv_rows if row[1] == 'hmm 1c' and int(row[4]) in [3, 4, 5, 6, 7] and int(row[5]) == 50 and int(row[13]) == 10]
+    if len(newrows) == 0:
         print("____________________\nNo experiments found\n")
     else:
-        display_problem_progress(rows, 90)
+        display_problem_progress(newrows, 45)
 
 
-    print("VSFMC: number of classes 3-7")
-    print("maxiter [150]")
-    print("mutation [0.5]")
-    print("recombination [0.5]")
-    print("popsize [10]")
-    rows = [row for row in csv_rows if row[1] == 'vsfcm nn' and int(row[4]) in [3, 4, 5, 6, 7]]
-    if len(rows) == 0:
+    print("HMM one per class: number of states 8, 9, 10, 12")
+    print("maxiter [50]")
+    print("num random inits 10")
+    print("covariance type ['spherical', 'diag', 'full']")
+    print(csv_rows[0])
+    newrows = [row for row in csv_rows if row[1] == 'hmm 1c' and int(row[4]) in [8, 9, 10, 12] and int(row[5]) == 50 and int(row[13]) == 10]
+    if len(newrows) == 0:
         print("____________________\nNo experiments found\n")
     else:
-        display_problem_progress(rows, 15)
+        display_problem_progress(newrows, 36)
+
+
+    # print("VSFMC: number of classes 3-7")
+    # print("maxiter [150]")
+    # print("mutation [0.5]")
+    # print("recombination [0.5]")
+    # print("popsize [10]")
+    # rows = [row for row in csv_rows if row[1] == 'vsfcm nn' and int(row[4]) in [3, 4, 5, 6, 7]]
+    # if len(rows) == 0:
+    #     print("____________________\nNo experiments found\n")
+    # else:
+    #     display_problem_progress(rows, 15)

@@ -85,3 +85,7 @@ DATASET_NAME_TO_INFO = {
         "WormsTwoClass":(77, 181, 900, 5), 
         "Yoga": (300, 3000, 426, 2)
 }
+
+def get_long_sequences_datasets_keys():
+    sorted_keys = [k for k, v in sorted(DATASET_NAME_TO_INFO.items(), key=lambda x: x[1][2], reverse=True)]
+    return sorted_keys[:len(sorted_keys)//4]

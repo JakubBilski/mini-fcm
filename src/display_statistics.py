@@ -62,6 +62,36 @@ def stats_in_bw(df):
         print(f"mean_acc_random_inits_1: {mean_acc_random_inits_1}")
         print(f"mean_acc_random_inits_10: {mean_acc_random_inits_10}")
 
+
+def best_hyperparameters(df, expected_num_experiments, method_name):
+    datasets = list(univariateDatasets.DATASET_NAME_TO_INFO.keys())
+    for dataset_index in range(len(datasets)):
+        dataset = datasets[dataset_index]
+        dataset_df = df[df['dataset'] == dataset]
+        if len(dataset_df) != expected_num_experiments:
+            print(f"Only {len(dataset_df)} rows found for {dataset}")
+            continue
+        parameter_pairs_to_acc = {}
+        for index, row in dataset_df.iterrows():
+            parameter_pair = (row.no_states, row.covariance_type)
+            accuracy = float(row.accuracy) if row.accuracy != "?" else 0.0
+            if parameter_pair in parameter_pairs_to_acc.keys():
+                parameter_pairs_to_acc[parameter_pair] += accuracy
+            else:
+                parameter_pairs_to_acc[parameter_pair] = accuracy
+        best_accuracy = 0.0
+        best_no_states = None
+        best_covariance = None
+        for k, v in parameter_pairs_to_acc.items():
+            if v > best_accuracy:
+                best_accuracy = v
+                best_no_states = k[0]
+                best_covariance = k[1]
+        # print(f"{dataset_index}: {best_no_states}, {best_covariance}")
+        dirname = "test_" + method_name.replace(" ", "") + str(dataset_index)
+        print(f'-d {dataset_index} -m {method_name} -rd {dirname} --test --teststates {best_no_states} --testcov {best_covariance}')
+
+
 if __name__ == "__main__":
     args = parse_args()
 
@@ -69,6 +99,35 @@ if __name__ == "__main__":
     df = pd.read_csv(csv_path, dtype="str")
     print(df.head())
 
-    biggest_difference_in_de(df)
-    stats_in_bw(df)
-    
+    # biggest_difference_in_de(df)
+    # stats_in_bw(df)
+
+    df = df[df['no_states'].astype(int) <= 12]
+
+    mdf = df[df['method'] == 'fcm nn']
+    mdf = mdf[mdf['maxiter'].astype(int) == 150]
+    mdf = mdf[mdf['mutation'].astype(float) == 0.5]
+    mdf = mdf[mdf['recombination'].astype(float) == 0.5]
+    mdf = mdf[mdf['popsize'].astype(int) == 10]
+    # print('Best hyperparameters for fcm nn')
+    best_hyperparameters(mdf, 27, 'fcm nn')
+
+    mdf = df[df['method'] == 'fcm 1c']
+    mdf = mdf[mdf['maxiter'].astype(int) == 150]
+    mdf = mdf[mdf['mutation'].astype(float) == 0.5]
+    mdf = mdf[mdf['recombination'].astype(float) == 0.5]
+    mdf = mdf[mdf['popsize'].astype(int) == 10]
+    # print('Best hyperparameters for fcm 1c')
+    best_hyperparameters(mdf, 27, 'fcm 1c')
+
+    mdf = df[df['method'] == 'hmm nn']
+    mdf = mdf[mdf['maxiter'].astype(int) == 50]
+    mdf = mdf[mdf['no_random_initializations'].astype(int) == 10]
+    # print('Best hyperparameters for hmm nn')
+    best_hyperparameters(mdf, 9*3*3, 'hmm nn')
+
+    mdf = df[df['method'] == 'hmm 1c']
+    mdf = mdf[mdf['maxiter'].astype(int) == 50]
+    mdf = mdf[mdf['no_random_initializations'].astype(int) == 10]
+    # print('Best hyperparameters for hmm 1c')
+    best_hyperparameters(mdf, 9*3*3, 'hmm 1c')

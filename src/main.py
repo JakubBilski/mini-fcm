@@ -210,6 +210,9 @@ def parse_args():
     parser.add_argument('--skipfile', '-sf', required=False, type=str)
     parser.add_argument('--bigstates', '-b', required=False, action='store_true')
     parser.add_argument('--fold', '-f', required=False, type=int)
+    parser.add_argument('--test', required=False, action='store_true')
+    parser.add_argument('--teststates', required=False, type=int)
+    parser.add_argument('--testcov', required=False, type=str)
     args = parser.parse_args()
     args.method = f"{args.method[0]} {args.method[1]}"
     if args.bigstates and args.method != 'hmm nn' and args.method != 'fcm nn' and args.method != 'hmm 1c'  and args.method != 'fcm 1c':
@@ -243,9 +246,11 @@ if __name__ == "__main__":
     tested_methods = [args.method]
 
     if args.bigstates:
-        tested_nums_states = [8, 9, 10, 12]
+        tested_nums_states = [16]
     else:
         tested_nums_states = [3, 4, 5, 6, 7]
+    if args.test:
+        tested_nums_states = [args.teststates]
 
     if args.method == 'fcm nn' or args.method == 'fcm 1c':
         tested_nos_random_initializations = ['?']
@@ -261,6 +266,8 @@ if __name__ == "__main__":
         tested_recombinations = ['?']
         tested_popsizes = ['?']
         tested_max_iters = [50]
+        if args.test:
+            tested_covariance_types = [args.testcov]
     elif args.method == 'vsfcm nn':
         tested_max_iters = [150]
         tested_nos_random_initializations = ['?']
@@ -294,41 +301,60 @@ if __name__ == "__main__":
             train_path=pathlib.Path('data', 'Univariate_ts', f'{dataset_name}', f'{dataset_name}_TRAIN.ts'),
             derivative_order=1)
 
-        folds = cross_validation_folds(train_xses_series, train_ys, 3)
-
-        for method_name, no_states, max_iter, no_rand_init, cov_type, mut, recomb, popsize in parameters:
-            for f in chosen_folds:
-                was_already_tested = False
-                for at_row in already_tested_rows:
-                    if at_row[0] == str(dataset_name) and \
-                        at_row[1] == str(method_name) and \
-                        at_row[2] == str(f) and \
-                        at_row[4] == str(no_states) and \
-                        at_row[5] == str(max_iter) and \
-                        at_row[13] == str(no_rand_init) and \
-                        at_row[14] == str(cov_type) and \
-                        at_row[15] == str(mut) and \
-                        at_row[16] == str(recomb) and \
-                        at_row[17] == str(popsize):
-                        print(f"Skipping {dataset_name} {method_name, no_states, max_iter, no_rand_init, cov_type, mut, recomb, popsize} {f}")
-                        was_already_tested = True
-                        break
-                if was_already_tested:
-                    continue
-                fold_train_xses_series = folds[f][0]
-                fold_train_ys = folds[f][1]
-                fold_validation_xses_series = folds[f][2]
-                fold_validation_ys = folds[f][3]
+        if not args.test:
+            folds = cross_validation_folds(train_xses_series, train_ys, 3)
+            for method_name, no_states, max_iter, no_rand_init, cov_type, mut, recomb, popsize in parameters:
+                for f in chosen_folds:
+                    was_already_tested = False
+                    for at_row in already_tested_rows:
+                        if at_row[0] == str(dataset_name) and \
+                            at_row[1] == str(method_name) and \
+                            at_row[2] == str(f) and \
+                            at_row[4] == str(no_states) and \
+                            at_row[5] == str(max_iter) and \
+                            at_row[13] == str(no_rand_init) and \
+                            at_row[14] == str(cov_type) and \
+                            at_row[15] == str(mut) and \
+                            at_row[16] == str(recomb) and \
+                            at_row[17] == str(popsize):
+                            print(f"Skipping {dataset_name} {method_name, no_states, max_iter, no_rand_init, cov_type, mut, recomb, popsize} {f}")
+                            was_already_tested = True
+                            break
+                    if was_already_tested:
+                        continue
+                    fold_train_xses_series = folds[f][0]
+                    fold_train_ys = folds[f][1]
+                    fold_validation_xses_series = folds[f][2]
+                    fold_validation_ys = folds[f][3]
+                    test_solution(
+                        method_name,
+                        fold_validation_xses_series,
+                        fold_validation_ys,
+                        fold_train_xses_series,
+                        fold_train_ys,
+                        dataset_name,
+                        no_states,
+                        max_iter,
+                        f,
+                        "",
+                        csv_results_path,
+                        no_random_initializations=no_rand_init,
+                        covariance_type=cov_type,
+                        mutation=mut,
+                        recombination=recomb,
+                        popsize=popsize)
+        else:
+            for method_name, no_states, max_iter, no_rand_init, cov_type, mut, recomb, popsize in parameters:
                 test_solution(
                     method_name,
-                    fold_validation_xses_series,
-                    fold_validation_ys,
-                    fold_train_xses_series,
-                    fold_train_ys,
+                    test_xses_series,
+                    test_ys,
+                    train_xses_series,
+                    train_ys,
                     dataset_name,
                     no_states,
                     max_iter,
-                    f,
+                    "test",
                     "",
                     csv_results_path,
                     no_random_initializations=no_rand_init,

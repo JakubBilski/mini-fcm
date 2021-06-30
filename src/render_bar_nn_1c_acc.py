@@ -70,7 +70,7 @@ def nn_vs_1c_barplot(df):
     ax.set_xticks(x)
     ax.set_xticklabels(['FCM', 'HMM spherical', 'HMM diagonal'])
     ax.set_ylim(0, 1)
-    ax.set_ylabel('mean accuracy')
+    ax.set_ylabel('mean accuracy', fontsize=13)
     plt.legend()
     fig.tight_layout()
 
@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     plots_dir = Path(args.plotdir)
     os.mkdir(plots_dir)
-    df = df[df['no_states'].astype(int) <= 12]
+    df = df[df['no_states'].astype(int) <= 16]
 
     nn_vs_1c_barplot(df)
     plt.savefig(plots_dir / "nn_vs_1c_acc.png", bbox_inches='tight')

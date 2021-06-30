@@ -185,15 +185,15 @@ if __name__ == "__main__":
     # biggest_difference_in_de(df)
     # stats_in_bw(df)
 
-    df = df[df['no_states'].astype(int) <= 12]
+    # df = df[df['no_states'].astype(int) <= 12]
 
-    # print('Best hyperparameters for fcm nn')
-    best_hyperparameters(fcmnn_df(df), 27, 'fcm nn')
-    # # print('Best hyperparameters for fcm 1c')
-    best_hyperparameters(fcm1c_df(df), 27, 'fcm 1c')
-    # # print('Best hyperparameters for hmm nn')
-    best_hyperparameters(hmmnn_df(df), 9*3*3, 'hmm nn')
-    # # print('Best hyperparameters for hmm 1c')
-    best_hyperparameters(hmmnn_df(df), 9*3*3, 'hmm 1c')
+    # # print('Best hyperparameters for fcm nn')
+    # best_hyperparameters(fcmnn_df(df), 30, 'fcm nn')
+    # # # print('Best hyperparameters for fcm 1c')
+    # best_hyperparameters(fcm1c_df(df), 30, 'fcm 1c')
+    # # # print('Best hyperparameters for hmm nn')
+    # best_hyperparameters(hmmnn_df(df), 10*3*3, 'hmm nn')
+    # # # print('Best hyperparameters for hmm 1c')
+    best_hyperparameters(hmm1c_df(df), 10*3*3, 'hmm 1c')
 
     # correlations_between_methods(df)

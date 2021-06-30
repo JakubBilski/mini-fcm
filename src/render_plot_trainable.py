@@ -98,9 +98,9 @@ if __name__ == "__main__":
     expected_no_rows = {}
     expected_no_rows['hmm nn'] = 30
     expected_no_rows['fcm nn'] = 30
-    expected_no_rows['hmm 1c'] = 15
-    expected_no_rows['fcm 1c'] = 15
-    expected_no_rows['vsfcm nn'] = 15
+    expected_no_rows['hmm 1c'] = 30
+    expected_no_rows['fcm 1c'] = 30
+    expected_no_rows['vsfcm nn'] = 27
 
 
     datasets = list(set(df['dataset']))
@@ -234,10 +234,10 @@ if __name__ == "__main__":
             else:
                 color = method_to_color[method]
             if should_draw_scatter:
-                ax.scatter(xs, ys, color=color, label=label)
+                ax.scatter(xs, ys, color=color, label=label, s=23)
             else:
-                ax.scatter(xs, ys, color=color, label=label)
-                ax.plot(xs, ys, color=color)
+                ax.scatter(xs, ys, color=color, label=label, s=23)
+                ax.plot(xs, ys, color=color, linewidth=2)
 
             if label in label_to_summary_plot_xs.keys():
                 label_to_summary_plot_xs[label].extend(xs)
@@ -266,7 +266,7 @@ if __name__ == "__main__":
                     marker=mpl.markers.MarkerStyle('s', fillstyle='full'), linestyle="None",
                     edgecolors=failed_color, facecolors=failed_color, label='failed to learn in three folds')
         
-
+        fontsize = 13
 
         dataset_info = univariateDatasets.DATASET_NAME_TO_INFO[dataset]
         no_classes = dataset_info[3]
@@ -274,14 +274,14 @@ if __name__ == "__main__":
         series_length = dataset_info[2]
         plt.subplots_adjust(wspace=0.0)
         if should_x_states:
-            ax.set_xlabel('number of hidden states/concepts')
+            ax.set_xlabel('number of hidden states/concepts', fontsize=fontsize)
         else:
-            ax.set_xlabel('number of trainable parameters')
+            ax.set_xlabel('number of trainable parameters', fontsize=fontsize)
         if should_y_time:
-            ax.set_ylabel('computation time [s]')
+            ax.set_ylabel('computation time [s]', fontsize=fontsize)
             ax.set_yscale('symlog')
         elif should_y_iters:
-            ax.set_ylabel('mean number of iterations in learning')
+            ax.set_ylabel('mean number of iterations', fontsize=fontsize)
             ax.axhline(50, color='black',linestyle='--', linewidth=1)
             ax.axhline(150, color='black',linestyle='--', linewidth=1)
             ax.set_yscale('symlog')
@@ -291,12 +291,12 @@ if __name__ == "__main__":
         else:
             ax.set_ylim([-0.05,1.05])
             if should_draw_scatter:
-                ax.set_ylabel('accuracy')
+                ax.set_ylabel('accuracy', fontsize=fontsize)
             else:
-                ax.set_ylabel('3CV accuracy')
+                ax.set_ylabel('3CV accuracy', fontsize=fontsize)
         plt.legend()
         # plt.suptitle(f'Performance of selected models: {dataset} ({no_classes} classes, train size {train_size}, series len {series_length})')
-        plt.suptitle(f'{dataset}')
+        # plt.suptitle(f'{dataset}')
         # plt.show()
         plt.savefig(plots_dir / f'{dataset}.png', bbox_inches='tight')
         plt.close()
@@ -304,14 +304,14 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(1, figsize=(5, 5), dpi=100)
     plt.subplots_adjust(wspace=0.0)
     if should_x_states:
-        ax.set_xlabel('number of hidden states/concepts')
+        ax.set_xlabel('number of hidden states/concepts', fontsize=fontsize)
     else:
-        ax.set_xlabel('number of trainable parameters for one model')
+        ax.set_xlabel('number of trainable parameters for one model', fontsize=fontsize)
     if should_y_time:
-        ax.set_ylabel('mean computation time [s]')
+        ax.set_ylabel('mean computation time [s]', fontsize=fontsize)
         ax.set_yscale('symlog')
     elif should_y_iters:
-        ax.set_ylabel('mean number of iterations in learning')
+        ax.set_ylabel('mean number of iterations in learning', fontsize=fontsize)
         ax.axhline(50, color='black',linestyle='--', linewidth=1)
         ax.axhline(150, color='black',linestyle='--', linewidth=1)
         # ax.set_yticks([50, 100, 150])
@@ -321,7 +321,7 @@ if __name__ == "__main__":
         ax.set_yticks([25, 50, 75, 100, 125, 150])
     else:
         ax.set_ylim([-0.05,1.05])
-        ax.set_ylabel('mean 3CV accuracy')
+        ax.set_ylabel('mean accuracy', fontsize=fontsize)
 
     for label in label_to_summary_plot_xs.keys():
         x_to_sum_ys = {}
@@ -342,11 +342,11 @@ if __name__ == "__main__":
             ys.append(x_to_sum_ys[x] / x_to_num_ys[x])
         color = label_to_summary_plot_color[label]
 
-        ax.scatter(xs, ys, color=color, label=label)
-        ax.plot(xs, ys, color=color)
+        ax.scatter(xs, ys, color=color, label=label, s=23)
+        ax.plot(xs, ys, color=color, linewidth=2)
     
     plt.legend()
-    plt.suptitle(f'all')
+    # plt.suptitle(f'all')
     # plt.show()
     plt.savefig(plots_dir / f'ZZZAllDatasets.png', bbox_inches='tight')
     plt.close()

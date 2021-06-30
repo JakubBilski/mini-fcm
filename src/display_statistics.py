@@ -5,6 +5,7 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime
 from loadingData import univariateDatasets
+from scipy.stats import spearmanr
 import os
 
 
@@ -72,6 +73,8 @@ def best_hyperparameters(df, expected_num_experiments, method_name):
             print(f"Only {len(dataset_df)} rows found for {dataset}")
             continue
         parameter_pairs_to_acc = {}
+        # print()
+        # print(f"{dataset}")
         for index, row in dataset_df.iterrows():
             parameter_pair = (row.no_states, row.covariance_type)
             accuracy = float(row.accuracy) if row.accuracy != "?" else 0.0
@@ -83,6 +86,7 @@ def best_hyperparameters(df, expected_num_experiments, method_name):
         best_no_states = None
         best_covariance = None
         for k, v in parameter_pairs_to_acc.items():
+            # print(f"{k}: {v}")
             if v > best_accuracy:
                 best_accuracy = v
                 best_no_states = k[0]
@@ -90,6 +94,85 @@ def best_hyperparameters(df, expected_num_experiments, method_name):
         # print(f"{dataset_index}: {best_no_states}, {best_covariance}")
         dirname = "test_" + method_name.replace(" ", "") + str(dataset_index)
         print(f'-d {dataset_index} -m {method_name} -rd {dirname} --test --teststates {best_no_states} --testcov {best_covariance}')
+
+
+def correlations_between_methods(df):
+    methods_and_covs = [
+        ('fcm nn', '?'),
+        ('fcm 1c', '?'),
+        ('hmm nn', 'spherical'),
+        ('hmm nn', 'diag'),
+        ('hmm nn', 'full'),
+        ('hmm 1c', 'spherical'),
+        ('hmm 1c', 'diag'),
+        ('hmm 1c', 'full')]
+    datasets = list(univariateDatasets.DATASET_NAME_TO_INFO.keys())
+    method_index_to_accs = []
+    for method, cov in methods_and_covs:
+        accs = []
+        method_df = df[df['method'] == method]
+        method_df = method_df[method_df['covariance_type'] == cov]
+        for dataset_index in range(len(datasets)):
+            dataset = datasets[dataset_index]
+            dataset_df = method_df[method_df['dataset'] == dataset]
+            mean_acc = dataset_df['accuracy'].replace('?', '0.0').astype(float).mean()
+            accs.append(mean_acc)
+        method_index_to_accs.append(accs)
+
+    coefficients = []
+    for i in range(len(methods_and_covs)):
+        coefficients_i = []
+        for j in range(len(methods_and_covs)):
+            print(f"{methods_and_covs[i]} and {methods_and_covs[j]}")
+            print(spearmanr(method_index_to_accs[i], method_index_to_accs[j])[0])
+            coefficients_i.append(spearmanr(method_index_to_accs[i], method_index_to_accs[j])[0])
+        coefficients.append(coefficients_i.copy())
+        coefficients_i = []
+    fig, ax = plt.subplots(1, 1, figsize=(6, 6), dpi=100)
+    ax.imshow(np.asarray(coefficients), cmap='hot', interpolation='nearest', vmin=0.5, vmax=1.0)
+    for i in range(len(methods_and_covs)):
+        for j in range(len(methods_and_covs)):
+            text = ax.text(j, i, f"{coefficients[i][j]:.2f}",
+                        ha="center", va="center", color="black")
+    ax.set_xticks(range(len(methods_and_covs)))
+    ax.set_yticks(range(len(methods_and_covs)))
+    ax.set_xticklabels([a.upper() + " " + (b[:4] if b != "?" else "") for a, b in methods_and_covs])
+    ax.set_yticklabels([a.upper() + " " + (b[:4] if b != "?" else "") for a, b in methods_and_covs])
+    plt.tight_layout()
+    plt.xticks(rotation=90)
+    plt.suptitle('Values of spearman coefficient between accuracy in datasets')
+    plt.show()
+
+def fcmnn_df(df):
+    mdf = df[df['method'] == 'fcm nn']
+    mdf = mdf[mdf['maxiter'].astype(int) == 150]
+    mdf = mdf[mdf['mutation'].astype(float) == 0.5]
+    mdf = mdf[mdf['recombination'].astype(float) == 0.5]
+    mdf = mdf[mdf['popsize'].astype(int) == 10]
+    return mdf
+
+
+def fcm1c_df(df):
+    mdf = df[df['method'] == 'fcm 1c']
+    mdf = mdf[mdf['maxiter'].astype(int) == 150]
+    mdf = mdf[mdf['mutation'].astype(float) == 0.5]
+    mdf = mdf[mdf['recombination'].astype(float) == 0.5]
+    mdf = mdf[mdf['popsize'].astype(int) == 10]
+    return mdf
+
+
+def hmmnn_df(df):
+    mdf = df[df['method'] == 'hmm nn']
+    mdf = mdf[mdf['maxiter'].astype(int) == 50]
+    mdf = mdf[mdf['no_random_initializations'].astype(int) == 10]
+    return mdf
+
+
+def hmm1c_df(df):
+    mdf = df[df['method'] == 'hmm 1c']
+    mdf = mdf[mdf['maxiter'].astype(int) == 50]
+    mdf = mdf[mdf['no_random_initializations'].astype(int) == 10]
+    return mdf
 
 
 if __name__ == "__main__":
@@ -104,30 +187,13 @@ if __name__ == "__main__":
 
     df = df[df['no_states'].astype(int) <= 12]
 
-    mdf = df[df['method'] == 'fcm nn']
-    mdf = mdf[mdf['maxiter'].astype(int) == 150]
-    mdf = mdf[mdf['mutation'].astype(float) == 0.5]
-    mdf = mdf[mdf['recombination'].astype(float) == 0.5]
-    mdf = mdf[mdf['popsize'].astype(int) == 10]
     # print('Best hyperparameters for fcm nn')
-    best_hyperparameters(mdf, 27, 'fcm nn')
+    best_hyperparameters(fcmnn_df(df), 27, 'fcm nn')
+    # # print('Best hyperparameters for fcm 1c')
+    best_hyperparameters(fcm1c_df(df), 27, 'fcm 1c')
+    # # print('Best hyperparameters for hmm nn')
+    best_hyperparameters(hmmnn_df(df), 9*3*3, 'hmm nn')
+    # # print('Best hyperparameters for hmm 1c')
+    best_hyperparameters(hmmnn_df(df), 9*3*3, 'hmm 1c')
 
-    mdf = df[df['method'] == 'fcm 1c']
-    mdf = mdf[mdf['maxiter'].astype(int) == 150]
-    mdf = mdf[mdf['mutation'].astype(float) == 0.5]
-    mdf = mdf[mdf['recombination'].astype(float) == 0.5]
-    mdf = mdf[mdf['popsize'].astype(int) == 10]
-    # print('Best hyperparameters for fcm 1c')
-    best_hyperparameters(mdf, 27, 'fcm 1c')
-
-    mdf = df[df['method'] == 'hmm nn']
-    mdf = mdf[mdf['maxiter'].astype(int) == 50]
-    mdf = mdf[mdf['no_random_initializations'].astype(int) == 10]
-    # print('Best hyperparameters for hmm nn')
-    best_hyperparameters(mdf, 9*3*3, 'hmm nn')
-
-    mdf = df[df['method'] == 'hmm 1c']
-    mdf = mdf[mdf['maxiter'].astype(int) == 50]
-    mdf = mdf[mdf['no_random_initializations'].astype(int) == 10]
-    # print('Best hyperparameters for hmm 1c')
-    best_hyperparameters(mdf, 9*3*3, 'hmm 1c')
+    # correlations_between_methods(df)
